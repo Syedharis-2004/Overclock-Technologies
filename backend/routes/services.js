@@ -7,17 +7,20 @@ const {
   deleteService
 } = require('../controllers/services');
 
+const { protect, authorize } = require('../middlewares/auth');
+
 const router = express.Router();
 
 router
   .route('/')
   .get(getServices)
-  .post(createService);
+  .post(protect, authorize('admin'), createService);
 
 router
   .route('/:id')
   .get(getService)
-  .put(updateService)
-  .delete(deleteService);
+  .put(protect, authorize('admin'), updateService)
+  .delete(protect, authorize('admin'), deleteService);
 
 module.exports = router;
+

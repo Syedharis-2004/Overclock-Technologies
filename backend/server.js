@@ -19,9 +19,10 @@ app.use(express.json());
 // Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/services', require('./routes/services'));
-// app.use('/api/portfolio', require('./routes/portfolio'));
+app.use('/api/portfolio', require('./routes/portfolio'));
+app.use('/api/careers', require('./routes/careers'));
+app.use('/api/team', require('./routes/team'));
 // app.use('/api/blogs', require('./routes/blogs'));
-// app.use('/api/careers', require('./routes/careers'));
 // app.use('/api/contact', require('./routes/contact'));
 
 app.get('/', (req, res) => {

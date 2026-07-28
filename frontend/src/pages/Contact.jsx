@@ -3,7 +3,7 @@ import { Mail, Phone, MapPin, Send } from 'lucide-react';
 
 const Contact = () => {
   return (
-    <div className="bg-[#0b1a20] min-h-screen pt-12 pb-24 relative overflow-hidden">
+    <div className="bg-[#022b3a] min-h-screen pt-12 pb-24 relative overflow-hidden">
       {/* Background Glow */}
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] translate-y-1/2 -translate-x-1/4" />
 
@@ -14,7 +14,7 @@ const Contact = () => {
           <motion.div 
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="inline-block px-4 py-1 border border-primary text-primary text-sm font-bold tracking-widest uppercase mb-6 bg-primary/10 shadow-[0_0_15px_rgba(0,157,177,0.2)]"
+            className="inline-block px-4 py-1 border border-primary text-primary text-sm font-bold tracking-widest uppercase mb-6 bg-primary/10 shadow-[0_0_15px_rgba(31,122,140,0.3)]"
           >
             Get In Touch
           </motion.div>
@@ -22,7 +22,7 @@ const Contact = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
-            className="text-4xl md:text-6xl font-bold text-white mb-6 uppercase tracking-wider"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-6 uppercase tracking-wider"
           >
             Let's Build Together
           </motion.h1>
@@ -36,7 +36,7 @@ const Contact = () => {
           </motion.p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
           
           {/* Contact Information */}
           <motion.div 
@@ -51,7 +51,7 @@ const Contact = () => {
             
             <div className="space-y-10">
               <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-default transition-transform duration-300">
-                <div className="p-4 bg-[#0b2f3f] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#0b1a20] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(0,157,177,0.4)]">
+                <div className="p-4 bg-[#0e3a4b] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#022b3a] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(31,122,140,0.4)]">
                   <Mail size={28} />
                 </div>
                 <div>
@@ -62,7 +62,7 @@ const Contact = () => {
               </motion.div>
               
               <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-default transition-transform duration-300">
-                <div className="p-4 bg-[#0b2f3f] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#0b1a20] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(0,157,177,0.4)]">
+                <div className="p-4 bg-[#0e3a4b] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#022b3a] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(31,122,140,0.4)]">
                   <Phone size={28} />
                 </div>
                 <div>
@@ -73,7 +73,7 @@ const Contact = () => {
               </motion.div>
               
               <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-default transition-transform duration-300">
-                <div className="p-4 bg-[#0b2f3f] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#0b1a20] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(0,157,177,0.4)]">
+                <div className="p-4 bg-[#0e3a4b] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#022b3a] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(31,122,140,0.4)]">
                   <MapPin size={28} />
                 </div>
                 <div>
@@ -85,7 +85,7 @@ const Contact = () => {
             </div>
             
             {/* Map Placeholder */}
-            <div className="mt-16 w-full h-48 bg-[#0b2f3f] border-2 border-transparent hover:border-primary transition-all duration-300 flex items-center justify-center group cursor-pointer relative overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(0,157,177,0.2)]">
+            <div className="mt-16 w-full h-48 bg-[#0e3a4b] border-2 border-transparent hover:border-primary transition-all duration-300 flex items-center justify-center group cursor-pointer relative overflow-hidden shadow-lg hover:shadow-[0_0_30px_rgba(31,122,140,0.3)]">
                <div className="absolute inset-0 bg-[url('/banner.jpeg')] bg-cover bg-center opacity-10 group-hover:opacity-20 transition-opacity duration-500 blur-sm"></div>
                <span className="text-slate-400 font-bold tracking-widest uppercase group-hover:text-primary transition-colors relative z-10 flex items-center gap-2">
                  <MapPin size={20} /> VIEW MAP
@@ -98,7 +98,7 @@ const Contact = () => {
             initial={{ opacity: 0, x: 30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="bg-[#0b2f3f] p-10 border-t-4 border-primary shadow-2xl relative"
+            className="bg-[#0e3a4b] p-6 sm:p-8 md:p-12 relative border border-primary/20 shadow-2xl"
           >
             {/* Decorative corner accents */}
             <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-primary -translate-x-2 -translate-y-2"></div>
@@ -113,7 +113,7 @@ const Contact = () => {
                   <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">First Name</label>
                   <input 
                     type="text" 
-                    className="w-full bg-[#0b1a20] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(0,157,177,0.3)] placeholder:text-slate-600"
+                    className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] placeholder:text-slate-600"
                     placeholder="John"
                   />
                 </div>
@@ -121,7 +121,7 @@ const Contact = () => {
                   <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">Last Name</label>
                   <input 
                     type="text" 
-                    className="w-full bg-[#0b1a20] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(0,157,177,0.3)] placeholder:text-slate-600"
+                    className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] placeholder:text-slate-600"
                     placeholder="Doe"
                   />
                 </div>
@@ -131,14 +131,14 @@ const Contact = () => {
                 <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">Email Address</label>
                 <input 
                   type="email" 
-                  className="w-full bg-[#0b1a20] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(0,157,177,0.3)] placeholder:text-slate-600"
+                  className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] placeholder:text-slate-600"
                   placeholder="john@example.com"
                 />
               </div>
               
               <div className="group relative">
                 <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">Service Required</label>
-                <select className="w-full bg-[#0b1a20] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(0,157,177,0.3)] appearance-none cursor-pointer">
+                <select className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] appearance-none cursor-pointer">
                   <option>Web & Software Development</option>
                   <option>Graphic Design</option>
                   <option>AI & Data Solutions</option>
@@ -152,7 +152,7 @@ const Contact = () => {
                 <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">Message</label>
                 <textarea 
                   rows="4"
-                  className="w-full bg-[#0b1a20] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(0,157,177,0.3)] resize-none placeholder:text-slate-600"
+                  className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] resize-none placeholder:text-slate-600"
                   placeholder="Tell us about your project..."
                 ></textarea>
               </div>
@@ -161,7 +161,7 @@ const Contact = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="w-full bg-primary hover:bg-white text-[#0b1a20] font-bold py-5 uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(0,157,177,0.3)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] mt-8"
+                className="w-full bg-primary hover:bg-white text-[#022b3a] font-bold py-5 uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(31,122,140,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] mt-8"
               >
                 Send Message <Send size={20} />
               </motion.button>
