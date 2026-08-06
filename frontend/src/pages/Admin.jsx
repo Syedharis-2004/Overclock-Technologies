@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, LogOut, Plus, Edit2, Trash2, Check, AlertCircle, Briefcase, 
-  Layers, Users, FolderGit2, X, RefreshCw, Eye, ShieldCheck, Sparkles 
+  Layers, Users, FolderGit2, X, RefreshCw, Eye, ShieldCheck, Sparkles,
+  Upload, ImageIcon, Link
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -34,6 +35,29 @@ const Admin = () => {
 
   // Form states
   const [formData, setFormData] = useState({});
+
+  // Image upload state
+  const [imagePreview, setImagePreview] = useState('');
+  const [imageUploading, setImageUploading] = useState(false);
+  const fileInputRef = useRef(null);
+
+  // Convert file to Base64
+  const handleImageFileChange = (file) => {
+    if (!file) return;
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Image size 2MB se zyada nahi honi chahiye', 'error');
+      return;
+    }
+    setImageUploading(true);
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result;
+      setImagePreview(base64);
+      setFormData(prev => ({ ...prev, imageUrl: base64 }));
+      setImageUploading(false);
+    };
+    reader.readAsDataURL(file);
+  };
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -104,6 +128,8 @@ const Admin = () => {
   const openModal = (type, item = null) => {
     setModalType(type);
     setCurrentItem(item);
+    // Reset image preview
+    setImagePreview('');
     if (type === 'edit' && item) {
       setFormData({
         ...item,
@@ -112,6 +138,8 @@ const Admin = () => {
         benefits: Array.isArray(item.benefits) ? item.benefits.join(', ') : item.benefits || '',
         technologies: Array.isArray(item.technologies) ? item.technologies.join(', ') : item.technologies || ''
       });
+      // If editing and member already has image, show it as preview
+      if (item.imageUrl) setImagePreview(item.imageUrl);
     } else {
       // Default empty forms per tab
       if (activeTab === 'careers') {
@@ -552,6 +580,7 @@ const Admin = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#0b2f3f] text-slate-300 uppercase tracking-widest border-b border-primary/20">
+                  <th className="p-4">Photo</th>
                   <th className="p-4">Name</th>
                   <th className="p-4">Role / Designation</th>
                   <th className="p-4">Bio</th>
@@ -562,13 +591,26 @@ const Admin = () => {
               <tbody className="divide-y divide-slate-800">
                 {team.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="p-8 text-center text-slate-500 uppercase tracking-wider">
+                    <td colSpan="6" className="p-8 text-center text-slate-500 uppercase tracking-wider">
                       No team members found. Click "Add New team" above.
                     </td>
                   </tr>
                 ) : (
                   team.map((mbr) => (
                     <tr key={mbr._id} className="hover:bg-[#0b2f3f]/80 transition-colors">
+                      <td className="p-4">
+                        {mbr.imageUrl ? (
+                          <img
+                            src={mbr.imageUrl}
+                            alt={mbr.name}
+                            className="w-10 h-10 rounded-full object-cover border-2 border-primary/40"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-[#0b1a20] border-2 border-slate-700 flex items-center justify-center">
+                            <ImageIcon size={16} className="text-slate-500" />
+                          </div>
+                        )}
+                      </td>
                       <td className="p-4 font-bold text-white">{mbr.name}</td>
                       <td className="p-4 text-primary font-semibold">{mbr.role}</td>
                       <td className="p-4 text-slate-400 max-w-xs truncate">{mbr.bio || 'N/A'}</td>
@@ -830,15 +872,84 @@ const Admin = () => {
                       className="w-full bg-[#0b1a20] border border-slate-700 focus:border-primary p-3 text-white outline-none"
                     />
                   </div>
+                  {/* ── IMAGE UPLOAD WIDGET ── */}
                   <div>
-                    <label className="block uppercase font-bold text-slate-300 mb-1">Image URL</label>
+                    <label className="block uppercase font-bold text-slate-300 mb-2">Profile Photo</label>
+
+                    {/* Drop zone / click to upload */}
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      onDragOver={(e) => e.preventDefault()}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        const file = e.dataTransfer.files[0];
+                        if (file && file.type.startsWith('image/')) handleImageFileChange(file);
+                      }}
+                      className="relative w-full border-2 border-dashed border-primary/40 hover:border-primary bg-[#0b1a20] transition-colors cursor-pointer rounded-sm overflow-hidden"
+                      style={{ minHeight: '120px' }}
+                    >
+                      {imagePreview ? (
+                        <div className="flex items-center gap-4 p-3">
+                          <img
+                            src={imagePreview}
+                            alt="Preview"
+                            className="w-20 h-20 object-cover rounded-full border-2 border-primary flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0">
+                            <p className="text-emerald-400 font-bold text-xs uppercase tracking-wider mb-1">Image Ready ✓</p>
+                            <p className="text-slate-400 text-[10px] truncate">
+                              {formData.imageUrl?.startsWith('data:') ? 'Uploaded from device' : formData.imageUrl}
+                            </p>
+                            <button
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setImagePreview(''); setFormData(prev => ({ ...prev, imageUrl: '' })); }}
+                              className="mt-2 text-[10px] text-red-400 hover:text-red-300 uppercase tracking-wider font-bold"
+                            >
+                              × Remove Image
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-8 gap-2">
+                          {imageUploading ? (
+                            <>
+                              <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                              <p className="text-primary text-xs uppercase tracking-wider">Processing...</p>
+                            </>
+                          ) : (
+                            <>
+                              <Upload size={28} className="text-primary/60" />
+                              <p className="text-slate-300 font-bold text-xs uppercase tracking-wider">Click or Drag & Drop</p>
+                              <p className="text-slate-500 text-[10px]">JPG, PNG, WEBP — Max 2MB</p>
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Hidden file input */}
                     <input
-                      type="url"
-                      value={formData.imageUrl || ''}
-                      onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
-                      placeholder="https://example.com/photo.jpg"
-                      className="w-full bg-[#0b1a20] border border-slate-700 focus:border-primary p-3 text-white outline-none"
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => handleImageFileChange(e.target.files[0])}
                     />
+
+                    {/* OR paste URL fallback */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <Link size={12} className="text-slate-500 flex-shrink-0" />
+                      <input
+                        type="url"
+                        value={formData.imageUrl?.startsWith('data:') ? '' : (formData.imageUrl || '')}
+                        onChange={(e) => {
+                          setFormData({ ...formData, imageUrl: e.target.value });
+                          setImagePreview(e.target.value);
+                        }}
+                        placeholder="Ya seedha image URL paste karein..."
+                        className="flex-1 bg-[#0b1a20] border border-slate-700 focus:border-primary px-3 py-2 text-white outline-none text-[10px]"
+                      />
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>

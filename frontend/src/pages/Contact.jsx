@@ -1,7 +1,54 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, MapPin, Send } from 'lucide-react';
+import { Mail, Phone, MapPin, Send, CheckCircle, AlertCircle, Loader2, MessageCircle } from 'lucide-react';
 
 const Contact = () => {
+  const [formData, setFormData] = useState({
+    firstName: '',
+    lastName: '',
+    email: '',
+    service: 'Web & Software Development',
+    message: ''
+  });
+  const [status, setStatus] = useState({ submitting: false, success: false, error: null });
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setStatus({ submitting: true, success: false, error: null });
+
+    try {
+      const response = await fetch('https://formspree.io/f/mdenkorl', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setStatus({ submitting: false, success: true, error: null });
+        setFormData({
+          firstName: '',
+          lastName: '',
+          email: '',
+          service: 'Web & Software Development',
+          message: ''
+        });
+      } else {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to submit form');
+      }
+    } catch (error) {
+      setStatus({ submitting: false, success: false, error: error.message || 'Something went wrong. Please try again.' });
+    }
+  };
+
   return (
     <div className="bg-[#022b3a] min-h-screen pt-12 pb-24 relative overflow-hidden">
       {/* Background Glow */}
@@ -50,26 +97,40 @@ const Contact = () => {
             </h3>
             
             <div className="space-y-10">
-              <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-default transition-transform duration-300">
-                <div className="p-4 bg-[#0e3a4b] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#022b3a] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(31,122,140,0.4)]">
-                  <Mail size={28} />
-                </div>
-                <div>
-                  <h4 className="text-white font-bold tracking-wider uppercase mb-2 group-hover:text-primary transition-colors">Email</h4>
-                  <p className="text-slate-400">info@overclocktech.com</p>
-                  <p className="text-slate-400">support@overclocktech.com</p>
-                </div>
+              <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-pointer transition-transform duration-300">
+                <a href="mailto:overclocktechnologies0@gmail.com" className="flex items-start gap-6 w-full">
+                  <div className="p-4 bg-[#0e3a4b] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#022b3a] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(31,122,140,0.4)]">
+                    <Mail size={28} />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold tracking-wider uppercase mb-2 group-hover:text-primary transition-colors">Email</h4>
+                    <p className="text-slate-400 hover:text-white transition-colors">overclocktechnologies0@gmail.com</p>
+                  </div>
+                </a>
               </motion.div>
               
-              <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-default transition-transform duration-300">
-                <div className="p-4 bg-[#0e3a4b] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#022b3a] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(31,122,140,0.4)]">
-                  <Phone size={28} />
-                </div>
-                <div>
-                  <h4 className="text-white font-bold tracking-wider uppercase mb-2 group-hover:text-primary transition-colors">Phone</h4>
-                  <p className="text-slate-400">+1 (555) 987-6543</p>
-                  <p className="text-slate-400">+1 (555) 123-4567</p>
-                </div>
+              <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-pointer transition-transform duration-300">
+                <a href="tel:+923283381841" className="flex items-start gap-6 w-full">
+                  <div className="p-4 bg-[#0e3a4b] border border-primary/20 text-primary group-hover:bg-primary group-hover:text-[#022b3a] transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(31,122,140,0.4)]">
+                    <Phone size={28} />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold tracking-wider uppercase mb-2 group-hover:text-primary transition-colors">Phone / Mobile</h4>
+                    <p className="text-slate-400 hover:text-white transition-colors">+92 3283381841</p>
+                  </div>
+                </a>
+              </motion.div>
+
+              <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-pointer transition-transform duration-300">
+                <a href="https://wa.me/923283381841" target="_blank" rel="noopener noreferrer" className="flex items-start gap-6 w-full">
+                  <div className="p-4 bg-[#25D366]/10 border border-[#25D366]/40 text-[#25D366] group-hover:bg-[#25D366] group-hover:text-white transition-colors duration-300 shadow-lg group-hover:shadow-[0_0_20px_rgba(37,211,102,0.4)]">
+                    <MessageCircle size={28} />
+                  </div>
+                  <div>
+                    <h4 className="text-white font-bold tracking-wider uppercase mb-2 group-hover:text-[#25D366] transition-colors">WhatsApp Direct</h4>
+                    <p className="text-slate-400 hover:text-white transition-colors">+92 3283381841 (Click to Chat)</p>
+                  </div>
+                </a>
               </motion.div>
               
               <motion.div whileHover={{ x: 10 }} className="flex items-start gap-6 group cursor-default transition-transform duration-300">
@@ -78,8 +139,8 @@ const Contact = () => {
                 </div>
                 <div>
                   <h4 className="text-white font-bold tracking-wider uppercase mb-2 group-hover:text-primary transition-colors">Office</h4>
-                  <p className="text-slate-400">123 Tech Lane, Innovation Park</p>
-                  <p className="text-slate-400">Silicon Valley, CA 94025</p>
+                  <p className="text-slate-400">Innovation Park</p>
+                  <p className="text-slate-400">Pakistan</p>
                 </div>
               </motion.div>
             </div>
@@ -107,12 +168,31 @@ const Contact = () => {
             <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-primary translate-x-2 translate-y-2"></div>
 
             <h3 className="text-2xl font-bold text-white mb-8 uppercase tracking-wider">Send a message</h3>
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            
+            {status.success && (
+              <div className="mb-6 p-4 bg-emerald-500/20 border border-emerald-500 text-emerald-300 flex items-center gap-3">
+                <CheckCircle size={20} className="flex-shrink-0" />
+                <p className="text-sm">Thank you! Your message has been sent successfully.</p>
+              </div>
+            )}
+
+            {status.error && (
+              <div className="mb-6 p-4 bg-red-500/20 border border-red-500 text-red-300 flex items-center gap-3">
+                <AlertCircle size={20} className="flex-shrink-0" />
+                <p className="text-sm">{status.error}</p>
+              </div>
+            )}
+
+            <form className="space-y-6" onSubmit={handleSubmit}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="group">
                   <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">First Name</label>
                   <input 
-                    type="text" 
+                    type="text"
+                    name="firstName"
+                    required
+                    value={formData.firstName}
+                    onChange={handleChange}
                     className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] placeholder:text-slate-600"
                     placeholder="John"
                   />
@@ -120,7 +200,11 @@ const Contact = () => {
                 <div className="group">
                   <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">Last Name</label>
                   <input 
-                    type="text" 
+                    type="text"
+                    name="lastName"
+                    required
+                    value={formData.lastName}
+                    onChange={handleChange}
                     className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] placeholder:text-slate-600"
                     placeholder="Doe"
                   />
@@ -130,7 +214,11 @@ const Contact = () => {
               <div className="group">
                 <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">Email Address</label>
                 <input 
-                  type="email" 
+                  type="email"
+                  name="email"
+                  required
+                  value={formData.email}
+                  onChange={handleChange}
                   className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] placeholder:text-slate-600"
                   placeholder="john@example.com"
                 />
@@ -138,12 +226,17 @@ const Contact = () => {
               
               <div className="group relative">
                 <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">Service Required</label>
-                <select className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] appearance-none cursor-pointer">
-                  <option>Web & Software Development</option>
-                  <option>Graphic Design</option>
-                  <option>AI & Data Solutions</option>
-                  <option>Consultation</option>
-                  <option>Other</option>
+                <select 
+                  name="service"
+                  value={formData.service}
+                  onChange={handleChange}
+                  className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] appearance-none cursor-pointer"
+                >
+                  <option value="Web & Software Development">Web & Software Development</option>
+                  <option value="Graphic Design">Graphic Design</option>
+                  <option value="AI & Data Solutions">AI & Data Solutions</option>
+                  <option value="Consultation">Consultation</option>
+                  <option value="Other">Other</option>
                 </select>
                 <div className="absolute right-4 top-10 text-primary pointer-events-none">▼</div>
               </div>
@@ -151,7 +244,11 @@ const Contact = () => {
               <div className="group">
                 <label className="block text-slate-400 text-xs font-bold mb-2 uppercase tracking-widest group-focus-within:text-primary transition-colors">Message</label>
                 <textarea 
+                  name="message"
+                  required
                   rows="4"
+                  value={formData.message}
+                  onChange={handleChange}
                   className="w-full bg-[#022b3a] border-b-2 border-transparent focus:border-primary text-white px-4 py-4 outline-none transition-all duration-300 focus:shadow-[0_10px_20px_-10px_rgba(31,122,140,0.4)] resize-none placeholder:text-slate-600"
                   placeholder="Tell us about your project..."
                 ></textarea>
@@ -161,9 +258,14 @@ const Contact = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 type="submit"
-                className="w-full bg-primary hover:bg-white text-[#022b3a] font-bold py-5 uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(31,122,140,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] mt-8"
+                disabled={status.submitting}
+                className="w-full bg-primary hover:bg-white text-[#022b3a] font-bold py-5 uppercase tracking-widest transition-all duration-300 flex items-center justify-center gap-3 shadow-[0_0_20px_rgba(31,122,140,0.4)] hover:shadow-[0_0_30px_rgba(255,255,255,0.6)] mt-8 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Send Message <Send size={20} />
+                {status.submitting ? (
+                  <>Sending... <Loader2 size={20} className="animate-spin" /></>
+                ) : (
+                  <>Send Message <Send size={20} /></>
+                )}
               </motion.button>
             </form>
           </motion.div>

@@ -46,9 +46,26 @@ const Footer = () => {
         <div>
           <h4 className="text-white font-bold tracking-wider uppercase mb-6 text-sm">Contact Us</h4>
           <ul className="space-y-3 text-slate-400 text-sm">
-            <li>info@overclocktech.com</li>
-            <li>+1 (555) 987-6543</li>
-            <li>Silicon Valley, CA</li>
+            <li>
+              <a href="mailto:overclocktechnologies0@gmail.com" className="hover:text-primary transition-colors">
+                overclocktechnologies0@gmail.com
+              </a>
+            </li>
+            <li>
+              <a href="tel:+923283381841" className="hover:text-primary transition-colors">
+                +92 3283381841
+              </a>
+            </li>
+            <li>
+              <a 
+                href="https://wa.me/923283381841" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="text-[#25D366] hover:underline font-semibold flex items-center gap-1.5 transition-colors"
+              >
+                WhatsApp Chat
+              </a>
+            </li>
           </ul>
         </div>
       </div>
