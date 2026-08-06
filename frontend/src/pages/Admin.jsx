@@ -18,6 +18,16 @@ const Admin = () => {
   // Active Tab: 'careers' | 'services' | 'team' | 'portfolio'
   const [activeTab, setActiveTab] = useState('careers');
 
+  const getTabLabel = (tabKey) => {
+    switch (tabKey) {
+      case 'careers': return 'Career Listing';
+      case 'services': return 'Service';
+      case 'team': return 'Team Member';
+      case 'portfolio': return 'Portfolio Project';
+      default: return 'Item';
+    }
+  };
+
   // Data states
   const [careers, setCareers] = useState([]);
   const [services, setServices] = useState([]);
@@ -466,7 +476,7 @@ const Admin = () => {
             onClick={() => openModal('add')}
             className="px-5 py-2.5 bg-primary text-[#022b3a] font-bold uppercase tracking-wider text-xs hover:bg-white transition-all shadow-[0_0_15px_rgba(31,122,140,0.4)] flex items-center gap-2"
           >
-            <Plus size={18} /> Add New {activeTab.slice(0, -1)}
+            <Plus size={18} /> Add New {getTabLabel(activeTab)}
           </button>
         </div>
 
@@ -488,7 +498,7 @@ const Admin = () => {
                 {careers.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="p-8 text-center text-slate-500 uppercase tracking-wider">
-                      No career listings found. Click "Add New career" above.
+                      No career listings found. Click "Add New Career Listing" above.
                     </td>
                   </tr>
                 ) : (
@@ -545,7 +555,7 @@ const Admin = () => {
                 {services.length === 0 ? (
                   <tr>
                     <td colSpan="4" className="p-8 text-center text-slate-500 uppercase tracking-wider">
-                      No services found. Click "Add New service" above.
+                      No services found. Click "Add New Service" above.
                     </td>
                   </tr>
                 ) : (
@@ -598,7 +608,7 @@ const Admin = () => {
                 {team.length === 0 ? (
                   <tr>
                     <td colSpan="6" className="p-8 text-center text-slate-500 uppercase tracking-wider">
-                      No team members found. Click "Add New team" above.
+                      No team members found. Click "Add New Team Member" above.
                     </td>
                   </tr>
                 ) : (
@@ -666,7 +676,7 @@ const Admin = () => {
                 {portfolio.length === 0 ? (
                   <tr>
                     <td colSpan="4" className="p-8 text-center text-slate-500 uppercase tracking-wider">
-                      No portfolio projects found. Click "Add New portfolio" above.
+                      No portfolio projects found. Click "Add New Portfolio Project" above.
                     </td>
                   </tr>
                 ) : (
@@ -716,7 +726,7 @@ const Admin = () => {
             </button>
 
             <h3 className="text-xl font-bold text-white uppercase tracking-wider mb-6">
-              {modalType === 'add' ? `Add ${activeTab.slice(0, -1)}` : `Edit ${activeTab.slice(0, -1)}`}
+              {modalType === 'add' ? `Add ${getTabLabel(activeTab)}` : `Edit ${getTabLabel(activeTab)}`}
             </h3>
 
             <form onSubmit={handleFormSubmit} className="space-y-4 text-xs">
