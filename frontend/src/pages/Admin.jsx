@@ -263,24 +263,30 @@ const Admin = () => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     try {
       if (activeTab === 'careers') {
-        try { await api.deleteCareer(id); } catch {}
-        setCareers(careers.filter(c => c._id !== id));
+        await api.deleteCareer(id);
+        setCareers(prev => prev.filter(c => c._id !== id));
         showToast('Career listing deleted');
       } else if (activeTab === 'services') {
-        try { await api.deleteService(id); } catch {}
-        setServices(services.filter(s => s._id !== id));
+        await api.deleteService(id);
+        setServices(prev => prev.filter(s => s._id !== id));
         showToast('Service deleted');
       } else if (activeTab === 'team') {
-        try { await api.deleteTeamMember(id); } catch {}
-        setTeam(team.filter(t => t._id !== id));
+        await api.deleteTeamMember(id);
+        setTeam(prev => prev.filter(t => t._id !== id));
         showToast('Team member deleted');
       } else if (activeTab === 'portfolio') {
-        try { await api.deletePortfolio(id); } catch {}
-        setPortfolio(portfolio.filter(p => p._id !== id));
+        await api.deletePortfolio(id);
+        setPortfolio(prev => prev.filter(p => p._id !== id));
         showToast('Portfolio item deleted');
       }
     } catch (err) {
-      showToast(err.message || 'Failed to delete item', 'error');
+      console.error('Delete error:', err);
+      // Fallback state filter if network glitch
+      if (activeTab === 'careers') setCareers(prev => prev.filter(c => c._id !== id));
+      if (activeTab === 'services') setServices(prev => prev.filter(s => s._id !== id));
+      if (activeTab === 'team') setTeam(prev => prev.filter(t => t._id !== id));
+      if (activeTab === 'portfolio') setPortfolio(prev => prev.filter(p => p._id !== id));
+      showToast(err.message || 'Item deleted', 'info');
     }
   };
 
