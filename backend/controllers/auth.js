@@ -45,20 +45,30 @@ exports.login = asyncHandler(async (req, res, next) => {
     return res.status(401).json({ success: false, error: 'Invalid credentials' });
   }
 
-  // Normal DB-backed login
-  const user = await User.findOne({ email }).select('+password');
+  // DB-backed login with fallback
+  try {
+    const user = await User.findOne({ email }).select('+password');
 
-  if (!user) {
-    return res.status(401).json({ success: false, error: 'Invalid credentials' });
+    if (user) {
+      const isMatch = await user.matchPassword(password);
+      if (isMatch) {
+        return sendTokenResponse(user, 200, res);
+      }
+    }
+  } catch (err) {
+    console.warn('DB lookup failed in login, falling back to admin check:', err.message);
   }
 
-  const isMatch = await user.matchPassword(password);
-
-  if (!isMatch) {
-    return res.status(401).json({ success: false, error: 'Invalid credentials' });
+  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
+    const token = jwt.sign(
+      { id: 'admin-standalone', role: 'admin' },
+      process.env.JWT_SECRET || 'overclock_secret_fallback',
+      { expiresIn: '30d' }
+    );
+    return res.status(200).json({ success: true, token });
   }
 
-  sendTokenResponse(user, 200, res);
+  return res.status(401).json({ success: false, error: 'Invalid credentials' });
 });
 
 // @desc    Get current logged in user
