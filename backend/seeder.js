@@ -26,12 +26,12 @@ const createAdminUser = async () => {
       await User.create({
         name: 'Super Admin',
         email: adminEmail,
-        password: 'password123',
+        password: 'Ot@54321',
         role: 'admin'
       });
       console.log(`Admin user created successfully!`);
       console.log(`Email: ${adminEmail}`);
-      console.log(`Password: password123`);
+      console.log(`Password: Ot@54321`);
     }
   } catch (error) {
     console.error('Error creating admin user:', error.message);

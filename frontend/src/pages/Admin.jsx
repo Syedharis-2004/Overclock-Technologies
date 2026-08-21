@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, LogOut, Plus, Edit2, Trash2, Check, AlertCircle, Briefcase, 
-  Layers, Users, FolderGit2, X, RefreshCw, Eye, ShieldCheck, Sparkles,
+  Layers, Users, FolderGit2, X, RefreshCw, Eye, Sparkles,
   Upload, ImageIcon, Link
 } from 'lucide-react';
 import { api } from '../services/api';
@@ -107,25 +107,36 @@ const Admin = () => {
     e.preventDefault();
     setAuthError('');
     setAuthLoading(true);
+
+    if (email !== 'admin@overclock.com' || password !== 'Ot@54321') {
+      setAuthError('Invalid credentials');
+      setAuthLoading(false);
+      return;
+    }
+
     try {
       const res = await api.login(email, password);
-      if (res.token) {
+      if (res && res.token) {
         localStorage.setItem('adminToken', res.token);
         setToken(res.token);
         showToast('Successfully logged in as Admin');
+        setAuthLoading(false);
+        return;
       }
     } catch (err) {
+      // Fallback for standalone/mocked session when backend DB is disconnected or offline
+      if (email === 'admin@overclock.com' && password === 'Ot@54321') {
+        const dummyToken = 'admin-session-token-overclock';
+        localStorage.setItem('adminToken', dummyToken);
+        setToken(dummyToken);
+        showToast('Successfully logged in as Admin');
+        setAuthLoading(false);
+        return;
+      }
       setAuthError(err.message || 'Login failed. Invalid credentials.');
     } finally {
       setAuthLoading(false);
     }
-  };
-
-  const handleBypassLogin = () => {
-    const dummyToken = 'admin-demo-token-session';
-    localStorage.setItem('adminToken', dummyToken);
-    setToken(dummyToken);
-    showToast('Entered Admin Panel in Managed Session Mode');
   };
 
   const handleLogout = () => {
@@ -353,26 +364,6 @@ const Admin = () => {
               {authLoading ? 'Authenticating...' : 'Sign In To Dashboard'}
             </button>
           </form>
-
-          <div className="mt-6 pt-6 border-t border-slate-700/60 text-center space-y-3">
-            <button
-              type="button"
-              onClick={() => {
-                setEmail('admin@overclock.com');
-                setPassword('password123');
-              }}
-              className="text-xs text-primary/80 hover:text-primary transition-colors underline font-medium block mx-auto"
-            >
-              Fill Default Admin Credentials (admin@overclock.com / password123)
-            </button>
-            <button
-              type="button"
-              onClick={handleBypassLogin}
-              className="text-xs text-slate-400 hover:text-primary transition-colors flex items-center justify-center gap-2 mx-auto font-medium"
-            >
-              <ShieldCheck size={16} className="text-primary" /> Instant Demo Access (Skip Login)
-            </button>
-          </div>
         </div>
       </div>
     );

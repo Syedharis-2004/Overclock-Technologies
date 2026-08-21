@@ -5,7 +5,7 @@ const mongoose = require('mongoose');
 
 // Default admin credentials for use when MongoDB is not connected
 const ADMIN_EMAIL = 'admin@overclock.com';
-const ADMIN_PASSWORD = 'password123';
+const ADMIN_PASSWORD = 'Ot@54321';
 
 const isDBConnected = () => mongoose.connection.readyState === 1;
 
