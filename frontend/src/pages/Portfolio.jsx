@@ -87,14 +87,17 @@ const Portfolio = () => {
     const fetchPortfolioData = async () => {
       try {
         const data = await api.getPortfolio();
-        if (data && data.length > 0) {
-          setProjects(data);
+        const deletedIds = new Set(
+          JSON.parse(localStorage.getItem('overclock_deleted_portfolio_ids') || '[]')
+        );
+        if (Array.isArray(data)) {
+          setProjects(data.filter(p => !deletedIds.has(p._id)));
         } else {
-          setProjects(defaultProjects);
+          setProjects([]);
         }
       } catch (err) {
-        console.warn('Backend API connection failed, using default portfolio data:', err);
-        setProjects(defaultProjects);
+        console.warn('Backend API connection failed, using local/empty portfolio data:', err);
+        setProjects([]);
       } finally {
         setLoading(false);
       }

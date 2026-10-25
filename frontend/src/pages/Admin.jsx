@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Lock, LogOut, Plus, Edit2, Trash2, Check, AlertCircle, Briefcase, 
   Layers, Users, FolderGit2, X, RefreshCw, Eye, Sparkles,
-  Upload, ImageIcon, Link
+  Upload, ImageIcon, Link, GripVertical
 } from 'lucide-react';
 import { api } from '../services/api';
 
@@ -103,16 +103,87 @@ const Admin = () => {
     }
   };
 
+  // Drag and drop state for vertical reordering
+  const [draggedIndex, setDraggedIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  const handleDragStart = (index, e) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', index.toString());
+  };
+
+  const handleDragOver = (index, e) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = async (dropIndex, e) => {
+    e.preventDefault();
+    if (draggedIndex === null || draggedIndex === dropIndex) {
+      handleDragEnd();
+      return;
+    }
+
+    let currentList = [];
+    let setList = null;
+    if (activeTab === 'careers') { currentList = careers; setList = setCareers; }
+    else if (activeTab === 'services') { currentList = services; setList = setServices; }
+    else if (activeTab === 'team') { currentList = team; setList = setTeam; }
+    else if (activeTab === 'portfolio') { currentList = portfolio; setList = setPortfolio; }
+
+    const reordered = Array.from(currentList);
+    const [movedItem] = reordered.splice(draggedIndex, 1);
+    reordered.splice(dropIndex, 0, movedItem);
+
+    setList(reordered);
+    handleDragEnd();
+
+    try {
+      await api.reorder(activeTab, reordered);
+      showToast(`${getTabLabel(activeTab)} reordered`);
+    } catch (err) {
+      console.warn('Reorder sync error:', err);
+    }
+  };
+
+  const moveItem = async (index, direction) => {
+    let currentList = [];
+    let setList = null;
+    if (activeTab === 'careers') { currentList = careers; setList = setCareers; }
+    else if (activeTab === 'services') { currentList = services; setList = setServices; }
+    else if (activeTab === 'team') { currentList = team; setList = setTeam; }
+    else if (activeTab === 'portfolio') { currentList = portfolio; setList = setPortfolio; }
+
+    const targetIndex = index + direction;
+    if (targetIndex < 0 || targetIndex >= currentList.length) return;
+
+    const reordered = Array.from(currentList);
+    const [movedItem] = reordered.splice(index, 1);
+    reordered.splice(targetIndex, 0, movedItem);
+
+    setList(reordered);
+
+    try {
+      await api.reorder(activeTab, reordered);
+      showToast(`${getTabLabel(activeTab)} order updated`);
+    } catch (err) {
+      console.warn('Reorder sync error:', err);
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     setAuthError('');
     setAuthLoading(true);
-
-    if (email !== 'admin@overclock.com' || password !== 'Ot@54321') {
-      setAuthError('Invalid credentials');
-      setAuthLoading(false);
-      return;
-    }
 
     try {
       const res = await api.login(email, password);
@@ -340,7 +411,8 @@ const Admin = () => {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="admin@overclock.com"
+                placeholder=""
+                autoComplete="off"
                 className="w-full bg-[#022b3a] border border-slate-700 focus:border-primary p-3 text-white text-sm outline-none"
               />
             </div>
@@ -351,7 +423,8 @@ const Admin = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder=""
+                autoComplete="off"
                 className="w-full bg-[#022b3a] border border-slate-700 focus:border-primary p-3 text-white text-sm outline-none"
               />
             </div>
@@ -477,6 +550,9 @@ const Admin = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#0b2f3f] text-slate-300 uppercase tracking-widest border-b border-primary/20">
+                  <th className="p-4 w-14 text-center" title="Reorder">
+                    <GripVertical size={14} className="inline opacity-60" />
+                  </th>
                   <th className="p-4">Title</th>
                   <th className="p-4">Department</th>
                   <th className="p-4">Location</th>
@@ -488,13 +564,52 @@ const Admin = () => {
               <tbody className="divide-y divide-slate-800">
                 {careers.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-500 uppercase tracking-wider">
+                    <td colSpan="7" className="p-8 text-center text-slate-500 uppercase tracking-wider">
                       No career listings found. Click "Add New Career Listing" above.
                     </td>
                   </tr>
                 ) : (
-                  careers.map((job) => (
-                    <tr key={job._id} className="hover:bg-[#0b2f3f]/80 transition-colors">
+                  careers.map((job, idx) => (
+                    <tr
+                      key={job._id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(idx, e)}
+                      onDragOver={(e) => handleDragOver(idx, e)}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(idx, e)}
+                      className={`transition-colors cursor-move ${
+                        draggedIndex === idx ? 'opacity-30 bg-primary/20 border-dashed border-primary' : ''
+                      } ${
+                        dragOverIndex === idx && draggedIndex !== idx ? 'border-t-2 border-primary bg-primary/15' : ''
+                      } hover:bg-[#0b2f3f]/80`}
+                    >
+                      <td className="p-3 text-center select-none w-14">
+                        <div className="flex items-center justify-center gap-1 text-slate-500 hover:text-primary transition-colors">
+                          <span className="cursor-grab active:cursor-grabbing p-1" title="Click and drag to reorder">
+                            <GripVertical size={16} />
+                          </span>
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={(e) => { e.stopPropagation(); moveItem(idx, -1); }}
+                              className="text-[9px] hover:text-primary disabled:opacity-20 leading-none p-0.5"
+                              title="Move up"
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === careers.length - 1}
+                              onClick={(e) => { e.stopPropagation(); moveItem(idx, 1); }}
+                              className="text-[9px] hover:text-primary disabled:opacity-20 leading-none p-0.5"
+                              title="Move down"
+                            >
+                              ▼
+                            </button>
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-4 font-bold text-white">{job.title}</td>
                       <td className="p-4 text-slate-300">{job.department}</td>
                       <td className="p-4 text-slate-400">{job.location}</td>
@@ -536,6 +651,9 @@ const Admin = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#0b2f3f] text-slate-300 uppercase tracking-widest border-b border-primary/20">
+                  <th className="p-4 w-14 text-center" title="Reorder">
+                    <GripVertical size={14} className="inline opacity-60" />
+                  </th>
                   <th className="p-4">Icon</th>
                   <th className="p-4">Title</th>
                   <th className="p-4">Description</th>
@@ -545,13 +663,52 @@ const Admin = () => {
               <tbody className="divide-y divide-slate-800">
                 {services.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="p-8 text-center text-slate-500 uppercase tracking-wider">
+                    <td colSpan="5" className="p-8 text-center text-slate-500 uppercase tracking-wider">
                       No services found. Click "Add New Service" above.
                     </td>
                   </tr>
                 ) : (
-                  services.map((srv) => (
-                    <tr key={srv._id} className="hover:bg-[#0b2f3f]/80 transition-colors">
+                  services.map((srv, idx) => (
+                    <tr
+                      key={srv._id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(idx, e)}
+                      onDragOver={(e) => handleDragOver(idx, e)}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(idx, e)}
+                      className={`transition-colors cursor-move ${
+                        draggedIndex === idx ? 'opacity-30 bg-primary/20 border-dashed border-primary' : ''
+                      } ${
+                        dragOverIndex === idx && draggedIndex !== idx ? 'border-t-2 border-primary bg-primary/15' : ''
+                      } hover:bg-[#0b2f3f]/80`}
+                    >
+                      <td className="p-3 text-center select-none w-14">
+                        <div className="flex items-center justify-center gap-1 text-slate-500 hover:text-primary transition-colors">
+                          <span className="cursor-grab active:cursor-grabbing p-1" title="Click and drag to reorder">
+                            <GripVertical size={16} />
+                          </span>
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={(e) => { e.stopPropagation(); moveItem(idx, -1); }}
+                              className="text-[9px] hover:text-primary disabled:opacity-20 leading-none p-0.5"
+                              title="Move up"
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === services.length - 1}
+                              onClick={(e) => { e.stopPropagation(); moveItem(idx, 1); }}
+                              className="text-[9px] hover:text-primary disabled:opacity-20 leading-none p-0.5"
+                              title="Move down"
+                            >
+                              ▼
+                            </button>
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-4 font-bold text-primary">{srv.icon || 'Code'}</td>
                       <td className="p-4 font-bold text-white">{srv.title}</td>
                       <td className="p-4 text-slate-400 max-w-md truncate">{srv.description || srv.desc}</td>
@@ -587,6 +744,9 @@ const Admin = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#0b2f3f] text-slate-300 uppercase tracking-widest border-b border-primary/20">
+                  <th className="p-4 w-14 text-center" title="Reorder">
+                    <GripVertical size={14} className="inline opacity-60" />
+                  </th>
                   <th className="p-4">Photo</th>
                   <th className="p-4">Name</th>
                   <th className="p-4">Role / Designation</th>
@@ -598,13 +758,52 @@ const Admin = () => {
               <tbody className="divide-y divide-slate-800">
                 {team.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-8 text-center text-slate-500 uppercase tracking-wider">
+                    <td colSpan="7" className="p-8 text-center text-slate-500 uppercase tracking-wider">
                       No team members found. Click "Add New Team Member" above.
                     </td>
                   </tr>
                 ) : (
-                  team.map((mbr) => (
-                    <tr key={mbr._id} className="hover:bg-[#0b2f3f]/80 transition-colors">
+                  team.map((mbr, idx) => (
+                    <tr
+                      key={mbr._id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(idx, e)}
+                      onDragOver={(e) => handleDragOver(idx, e)}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(idx, e)}
+                      className={`transition-colors cursor-move ${
+                        draggedIndex === idx ? 'opacity-30 bg-primary/20 border-dashed border-primary' : ''
+                      } ${
+                        dragOverIndex === idx && draggedIndex !== idx ? 'border-t-2 border-primary bg-primary/15' : ''
+                      } hover:bg-[#0b2f3f]/80`}
+                    >
+                      <td className="p-3 text-center select-none w-14">
+                        <div className="flex items-center justify-center gap-1 text-slate-500 hover:text-primary transition-colors">
+                          <span className="cursor-grab active:cursor-grabbing p-1" title="Click and drag to reorder">
+                            <GripVertical size={16} />
+                          </span>
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={(e) => { e.stopPropagation(); moveItem(idx, -1); }}
+                              className="text-[9px] hover:text-primary disabled:opacity-20 leading-none p-0.5"
+                              title="Move up"
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === team.length - 1}
+                              onClick={(e) => { e.stopPropagation(); moveItem(idx, 1); }}
+                              className="text-[9px] hover:text-primary disabled:opacity-20 leading-none p-0.5"
+                              title="Move down"
+                            >
+                              ▼
+                            </button>
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-4">
                         {mbr.imageUrl ? (
                           <img
@@ -657,6 +856,9 @@ const Admin = () => {
             <table className="w-full text-left text-xs border-collapse">
               <thead>
                 <tr className="bg-[#0b2f3f] text-slate-300 uppercase tracking-widest border-b border-primary/20">
+                  <th className="p-4 w-14 text-center" title="Reorder">
+                    <GripVertical size={14} className="inline opacity-60" />
+                  </th>
                   <th className="p-4">Project Title</th>
                   <th className="p-4">Category</th>
                   <th className="p-4">Technologies</th>
@@ -666,13 +868,52 @@ const Admin = () => {
               <tbody className="divide-y divide-slate-800">
                 {portfolio.length === 0 ? (
                   <tr>
-                    <td colSpan="4" className="p-8 text-center text-slate-500 uppercase tracking-wider">
+                    <td colSpan="5" className="p-8 text-center text-slate-500 uppercase tracking-wider">
                       No portfolio projects found. Click "Add New Portfolio Project" above.
                     </td>
                   </tr>
                 ) : (
-                  portfolio.map((prj) => (
-                    <tr key={prj._id} className="hover:bg-[#0b2f3f]/80 transition-colors">
+                  portfolio.map((prj, idx) => (
+                    <tr
+                      key={prj._id}
+                      draggable
+                      onDragStart={(e) => handleDragStart(idx, e)}
+                      onDragOver={(e) => handleDragOver(idx, e)}
+                      onDragEnd={handleDragEnd}
+                      onDrop={(e) => handleDrop(idx, e)}
+                      className={`transition-colors cursor-move ${
+                        draggedIndex === idx ? 'opacity-30 bg-primary/20 border-dashed border-primary' : ''
+                      } ${
+                        dragOverIndex === idx && draggedIndex !== idx ? 'border-t-2 border-primary bg-primary/15' : ''
+                      } hover:bg-[#0b2f3f]/80`}
+                    >
+                      <td className="p-3 text-center select-none w-14">
+                        <div className="flex items-center justify-center gap-1 text-slate-500 hover:text-primary transition-colors">
+                          <span className="cursor-grab active:cursor-grabbing p-1" title="Click and drag to reorder">
+                            <GripVertical size={16} />
+                          </span>
+                          <div className="flex flex-col">
+                            <button
+                              type="button"
+                              disabled={idx === 0}
+                              onClick={(e) => { e.stopPropagation(); moveItem(idx, -1); }}
+                              className="text-[9px] hover:text-primary disabled:opacity-20 leading-none p-0.5"
+                              title="Move up"
+                            >
+                              ▲
+                            </button>
+                            <button
+                              type="button"
+                              disabled={idx === portfolio.length - 1}
+                              onClick={(e) => { e.stopPropagation(); moveItem(idx, 1); }}
+                              className="text-[9px] hover:text-primary disabled:opacity-20 leading-none p-0.5"
+                              title="Move down"
+                            >
+                              ▼
+                            </button>
+                          </div>
+                        </div>
+                      </td>
                       <td className="p-4 font-bold text-white">{prj.title}</td>
                       <td className="p-4 text-primary font-semibold">{prj.category}</td>
                       <td className="p-4 text-slate-400">

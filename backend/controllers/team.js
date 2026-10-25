@@ -151,3 +151,33 @@ exports.deleteTeamMember = asyncHandler(async (req, res, next) => {
   inMemoryTeam = inMemoryTeam.filter(t => t._id !== req.params.id);
   res.status(200).json({ success: true, data: {} });
 });
+
+// @desc    Reorder team members
+// @route   PUT /api/team/reorder
+// @access  Private/Admin
+exports.reorderTeam = asyncHandler(async (req, res, next) => {
+  const { orderedIds } = req.body;
+  if (Array.isArray(orderedIds)) {
+    if (isDBConnected()) {
+      try {
+        for (let i = 0; i < orderedIds.length; i++) {
+          await Team.findByIdAndUpdate(orderedIds[i], { order: i });
+        }
+      } catch (err) {
+        console.warn('DB reorder failed in team:', err.message);
+      }
+    }
+
+    const map = new Map(inMemoryTeam.map(t => [t._id, t]));
+    const reordered = [];
+    orderedIds.forEach(id => {
+      if (map.has(id)) {
+        reordered.push(map.get(id));
+        map.delete(id);
+      }
+    });
+    inMemoryTeam = [...reordered, ...map.values()];
+  }
+
+  res.status(200).json({ success: true, data: inMemoryTeam });
+});

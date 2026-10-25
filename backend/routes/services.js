@@ -4,7 +4,8 @@ const {
   getService,
   createService,
   updateService,
-  deleteService
+  deleteService,
+  reorderServices
 } = require('../controllers/services');
 
 const { protect, authorize } = require('../middlewares/auth');
@@ -15,6 +16,10 @@ router
   .route('/')
   .get(getServices)
   .post(protect, authorize('admin'), createService);
+
+router
+  .route('/reorder')
+  .put(protect, authorize('admin'), reorderServices);
 
 router
   .route('/:id')

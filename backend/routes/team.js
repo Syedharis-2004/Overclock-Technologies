@@ -4,7 +4,8 @@ const {
   getTeamMember,
   createTeamMember,
   updateTeamMember,
-  deleteTeamMember
+  deleteTeamMember,
+  reorderTeam
 } = require('../controllers/team');
 
 const { protect, authorize } = require('../middlewares/auth');
@@ -15,6 +16,10 @@ router
   .route('/')
   .get(getTeamMembers)
   .post(protect, authorize('admin'), createTeamMember);
+
+router
+  .route('/reorder')
+  .put(protect, authorize('admin'), reorderTeam);
 
 router
   .route('/:id')

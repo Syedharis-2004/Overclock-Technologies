@@ -40,27 +40,31 @@ let inMemoryPortfolios = [
   }
 ];
 
+let deletedPortfolioIds = new Set();
+
 // @desc    Get all portfolio projects
 // @route   GET /api/portfolio
 // @access  Public
 exports.getPortfolios = asyncHandler(async (req, res, next) => {
   if (isDBConnected()) {
     try {
-      const portfolios = await Portfolio.find().sort({ createdAt: -1 });
+      const portfolios = await Portfolio.find().sort({ order: 1, createdAt: -1 });
+      const nonDeleted = portfolios.filter(p => !deletedPortfolioIds.has(p._id.toString()));
       return res.status(200).json({
         success: true,
-        count: portfolios.length,
-        data: portfolios
+        count: nonDeleted.length,
+        data: nonDeleted
       });
     } catch (err) {
       console.warn('DB query failed in getPortfolios, using fallback:', err.message);
     }
   }
 
+  const filtered = inMemoryPortfolios.filter(p => !deletedPortfolioIds.has(p._id));
   res.status(200).json({
     success: true,
-    count: inMemoryPortfolios.length,
-    data: inMemoryPortfolios
+    count: filtered.length,
+    data: filtered
   });
 });
 
@@ -147,18 +151,47 @@ exports.updatePortfolio = asyncHandler(async (req, res, next) => {
 // @route   DELETE /api/portfolio/:id
 // @access  Private/Admin
 exports.deletePortfolio = asyncHandler(async (req, res, next) => {
+  const id = req.params.id;
+  deletedPortfolioIds.add(id);
+
   if (isDBConnected()) {
     try {
-      const portfolio = await Portfolio.findById(req.params.id);
-      if (portfolio) {
-        await portfolio.deleteOne();
-        return res.status(200).json({ success: true, data: {} });
-      }
+      await Portfolio.findByIdAndDelete(id);
     } catch (err) {
       console.warn('DB delete failed in deletePortfolio, using fallback:', err.message);
     }
   }
 
-  inMemoryPortfolios = inMemoryPortfolios.filter(p => p._id !== req.params.id);
+  inMemoryPortfolios = inMemoryPortfolios.filter(p => p._id !== id);
   res.status(200).json({ success: true, data: {} });
+});
+
+// @desc    Reorder portfolio projects
+// @route   PUT /api/portfolio/reorder
+// @access  Private/Admin
+exports.reorderPortfolios = asyncHandler(async (req, res, next) => {
+  const { orderedIds } = req.body;
+  if (Array.isArray(orderedIds)) {
+    if (isDBConnected()) {
+      try {
+        for (let i = 0; i < orderedIds.length; i++) {
+          await Portfolio.findByIdAndUpdate(orderedIds[i], { order: i });
+        }
+      } catch (err) {
+        console.warn('DB reorder failed in portfolio:', err.message);
+      }
+    }
+
+    const map = new Map(inMemoryPortfolios.map(p => [p._id, p]));
+    const reordered = [];
+    orderedIds.forEach(id => {
+      if (map.has(id)) {
+        reordered.push(map.get(id));
+        map.delete(id);
+      }
+    });
+    inMemoryPortfolios = [...reordered, ...map.values()];
+  }
+
+  res.status(200).json({ success: true, data: inMemoryPortfolios });
 });

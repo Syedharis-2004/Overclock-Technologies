@@ -33,6 +33,10 @@ const CareerSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  order: {
+    type: Number,
+    default: 0
   }
 });
 

@@ -4,7 +4,8 @@ const {
   getCareer,
   createCareer,
   updateCareer,
-  deleteCareer
+  deleteCareer,
+  reorderCareers
 } = require('../controllers/careers');
 
 const { protect, authorize } = require('../middlewares/auth');
@@ -15,6 +16,10 @@ router
   .route('/')
   .get(getCareers)
   .post(protect, authorize('admin'), createCareer);
+
+router
+  .route('/reorder')
+  .put(protect, authorize('admin'), reorderCareers);
 
 router
   .route('/:id')

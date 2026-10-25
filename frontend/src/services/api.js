@@ -35,15 +35,47 @@ const setStorageList = (key, list) => {
   }
 };
 
-const mergeLists = (apiItems = [], localItems = []) => {
+const addDeletedId = (key, id) => {
+  const list = getStorageList(key);
+  if (!list.includes(id)) {
+    setStorageList(key, [...list, id]);
+  }
+};
+
+const getSavedOrder = (type) => getStorageList(`overclock_order_${type}`);
+
+const sortBySavedOrder = (items, type) => {
+  const orderList = getSavedOrder(type);
+  if (!orderList || !orderList.length) {
+    return [...items].sort((a, b) => (a.order ?? 9999) - (b.order ?? 9999));
+  }
   const map = new Map();
+  orderList.forEach((id, index) => map.set(id, index));
+  return [...items].sort((a, b) => {
+    const idxA = map.has(a._id) ? map.get(a._id) : (a.order ?? 9999);
+    const idxB = map.has(b._id) ? map.get(b._id) : (b.order ?? 9999);
+    return idxA - idxB;
+  });
+};
+
+const mergeLists = (apiItems = [], localItems = [], deletedKey = null, type = null) => {
+  const deletedSet = deletedKey ? new Set(getStorageList(deletedKey)) : new Set();
+  const map = new Map();
+
   (apiItems || []).forEach(item => {
-    if (item && item._id) map.set(item._id, item);
+    if (item && item._id && !deletedSet.has(item._id)) {
+      map.set(item._id, item);
+    }
   });
+
   (localItems || []).forEach(item => {
-    if (item && item._id) map.set(item._id, item);
+    if (item && item._id && !deletedSet.has(item._id)) {
+      map.set(item._id, item);
+    }
   });
-  return Array.from(map.values());
+
+  const merged = Array.from(map.values()).filter(item => !deletedSet.has(item._id));
+  return type ? sortBySavedOrder(merged, type) : merged;
 };
 
 const removeStorageItem = (key, id) => {
@@ -83,7 +115,7 @@ export const api = {
       console.warn('Get services API fallback:', err.message);
     }
     const localData = getStorageList('overclock_local_services');
-    return mergeLists(apiData, localData);
+    return mergeLists(apiData, localData, 'overclock_deleted_services_ids', 'services');
   },
 
   async createService(serviceData) {
@@ -143,6 +175,7 @@ export const api = {
       console.warn('Delete service API fallback:', err.message);
     }
     removeStorageItem('overclock_local_services', id);
+    addDeletedId('overclock_deleted_services_ids', id);
     return { success: true };
   },
 
@@ -157,7 +190,7 @@ export const api = {
       console.warn('Get careers API fallback:', err.message);
     }
     const localData = getStorageList('overclock_local_careers');
-    return mergeLists(apiData, localData);
+    return mergeLists(apiData, localData, 'overclock_deleted_careers_ids', 'careers');
   },
 
   async createCareer(careerData) {
@@ -217,6 +250,7 @@ export const api = {
       console.warn('Delete career API fallback:', err.message);
     }
     removeStorageItem('overclock_local_careers', id);
+    addDeletedId('overclock_deleted_careers_ids', id);
     return { success: true };
   },
 
@@ -231,7 +265,7 @@ export const api = {
       console.warn('Get team API fallback:', err.message);
     }
     const localData = getStorageList('overclock_local_team');
-    return mergeLists(apiData, localData);
+    return mergeLists(apiData, localData, 'overclock_deleted_team_ids', 'team');
   },
 
   async createTeamMember(memberData) {
@@ -291,6 +325,7 @@ export const api = {
       console.warn('Delete team member API fallback:', err.message);
     }
     removeStorageItem('overclock_local_team', id);
+    addDeletedId('overclock_deleted_team_ids', id);
     return { success: true };
   },
 
@@ -305,7 +340,7 @@ export const api = {
       console.warn('Get portfolio API fallback:', err.message);
     }
     const localData = getStorageList('overclock_local_portfolio');
-    return mergeLists(apiData, localData);
+    return mergeLists(apiData, localData, 'overclock_deleted_portfolio_ids', 'portfolio');
   },
 
   async createPortfolio(projectData) {
@@ -365,6 +400,32 @@ export const api = {
       console.warn('Delete portfolio API fallback:', err.message);
     }
     removeStorageItem('overclock_local_portfolio', id);
+    addDeletedId('overclock_deleted_portfolio_ids', id);
+
+    const currentOrder = getStorageList('overclock_order_portfolio');
+    setStorageList('overclock_order_portfolio', currentOrder.filter(x => x !== id));
     return { success: true };
+  },
+
+  // Reorder items across any tab (careers, services, team, portfolio)
+  async reorder(type, orderedItems) {
+    if (!Array.isArray(orderedItems)) return orderedItems;
+    const orderedIds = orderedItems.map(item => item._id);
+
+    // Save order and items locally so live frontend renders it instantly
+    setStorageList(`overclock_order_${type}`, orderedIds);
+    setStorageList(`overclock_local_${type}`, orderedItems);
+
+    try {
+      await fetch(`${API_BASE_URL}/${type}/reorder`, {
+        method: 'PUT',
+        headers: getHeaders(true),
+        body: JSON.stringify({ orderedIds })
+      });
+    } catch (err) {
+      console.warn(`Reorder ${type} API fallback:`, err.message);
+    }
+
+    return orderedItems;
   }
 };

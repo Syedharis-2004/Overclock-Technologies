@@ -21,7 +21,7 @@ let inMemoryServices = [
 exports.getServices = asyncHandler(async (req, res, next) => {
   if (isDBConnected()) {
     try {
-      const services = await Service.find();
+      const services = await Service.find().sort({ order: 1, createdAt: -1 });
       return res.status(200).json({
         success: true,
         count: services.length,
@@ -128,4 +128,34 @@ exports.deleteService = asyncHandler(async (req, res, next) => {
 
   inMemoryServices = inMemoryServices.filter(s => s._id !== req.params.id);
   res.status(200).json({ success: true, data: {} });
+});
+
+// @desc    Reorder services
+// @route   PUT /api/services/reorder
+// @access  Private/Admin
+exports.reorderServices = asyncHandler(async (req, res, next) => {
+  const { orderedIds } = req.body;
+  if (Array.isArray(orderedIds)) {
+    if (isDBConnected()) {
+      try {
+        for (let i = 0; i < orderedIds.length; i++) {
+          await Service.findByIdAndUpdate(orderedIds[i], { order: i });
+        }
+      } catch (err) {
+        console.warn('DB reorder failed in services:', err.message);
+      }
+    }
+
+    const map = new Map(inMemoryServices.map(s => [s._id, s]));
+    const reordered = [];
+    orderedIds.forEach(id => {
+      if (map.has(id)) {
+        reordered.push(map.get(id));
+        map.delete(id);
+      }
+    });
+    inMemoryServices = [...reordered, ...map.values()];
+  }
+
+  res.status(200).json({ success: true, data: inMemoryServices });
 });

@@ -4,7 +4,8 @@ const {
   getPortfolio,
   createPortfolio,
   updatePortfolio,
-  deletePortfolio
+  deletePortfolio,
+  reorderPortfolios
 } = require('../controllers/portfolio');
 
 const { protect, authorize } = require('../middlewares/auth');
@@ -15,6 +16,10 @@ router
   .route('/')
   .get(getPortfolios)
   .post(protect, authorize('admin'), createPortfolio);
+
+router
+  .route('/reorder')
+  .put(protect, authorize('admin'), reorderPortfolios);
 
 router
   .route('/:id')

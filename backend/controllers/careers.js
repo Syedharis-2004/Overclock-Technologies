@@ -46,7 +46,7 @@ let inMemoryCareers = [
 exports.getCareers = asyncHandler(async (req, res, next) => {
   if (isDBConnected()) {
     try {
-      const careers = await Career.find().sort({ createdAt: -1 });
+      const careers = await Career.find().sort({ order: 1, createdAt: -1 });
       return res.status(200).json({
         success: true,
         count: careers.length,
@@ -153,4 +153,34 @@ exports.deleteCareer = asyncHandler(async (req, res, next) => {
 
   inMemoryCareers = inMemoryCareers.filter(c => c._id !== req.params.id);
   res.status(200).json({ success: true, data: {} });
+});
+
+// @desc    Reorder careers
+// @route   PUT /api/careers/reorder
+// @access  Private/Admin
+exports.reorderCareers = asyncHandler(async (req, res, next) => {
+  const { orderedIds } = req.body;
+  if (Array.isArray(orderedIds)) {
+    if (isDBConnected()) {
+      try {
+        for (let i = 0; i < orderedIds.length; i++) {
+          await Career.findByIdAndUpdate(orderedIds[i], { order: i });
+        }
+      } catch (err) {
+        console.warn('DB reorder failed in careers:', err.message);
+      }
+    }
+
+    const map = new Map(inMemoryCareers.map(c => [c._id, c]));
+    const reordered = [];
+    orderedIds.forEach(id => {
+      if (map.has(id)) {
+        reordered.push(map.get(id));
+        map.delete(id);
+      }
+    });
+    inMemoryCareers = [...reordered, ...map.values()];
+  }
+
+  res.status(200).json({ success: true, data: inMemoryCareers });
 });
