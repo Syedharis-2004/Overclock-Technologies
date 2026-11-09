@@ -1,70 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, Code2 } from 'lucide-react';
+import { ExternalLink, Code2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
-
-const defaultProjects = [
-  {
-    _id: 'def-port-1',
-    title: "NexGen ERP System",
-    category: "Enterprise Software",
-    description: "A comprehensive cloud-based ERP solution for a manufacturing giant, increasing operational efficiency by 40%.",
-    technologies: ["React", "Node.js", "PostgreSQL", "Docker"],
-    imageUrl: "",
-    liveDemoUrl: "#",
-    githubUrl: "#"
-  },
-  {
-    _id: 'def-port-2',
-    title: "FinTech Mobile Wallet",
-    category: "Mobile App",
-    description: "A highly secure and intuitive mobile wallet application supporting crypto and fiat currencies for over 1M users.",
-    technologies: ["React Native", "TypeScript", "Node.js", "MongoDB"],
-    imageUrl: "",
-    liveDemoUrl: "#",
-    githubUrl: "#"
-  },
-  {
-    _id: 'def-port-3',
-    title: "AI Predictive Analytics Dashboard",
-    category: "Data & AI",
-    description: "Custom dashboard utilizing machine learning models to forecast retail sales trends with 95% accuracy.",
-    technologies: ["Python", "PyTorch", "React", "FastAPI"],
-    imageUrl: "",
-    liveDemoUrl: "#",
-    githubUrl: "#"
-  },
-  {
-    _id: 'def-port-4',
-    title: "Global E-Commerce Platform",
-    category: "Web Development",
-    description: "Scalable e-commerce architecture built on microservices, handling 10k+ concurrent transactions during peak sales.",
-    technologies: ["Next.js", "GraphQL", "Redis", "AWS"],
-    imageUrl: "",
-    liveDemoUrl: "#",
-    githubUrl: "#"
-  },
-  {
-    _id: 'def-port-5',
-    title: "Smart Logistics Tracker",
-    category: "IoT & Cloud",
-    description: "Real-time supply chain tracking system integrating IoT sensors with a robust cloud backend.",
-    technologies: ["Go", "MQTT", "React", "GCP"],
-    imageUrl: "",
-    liveDemoUrl: "#",
-    githubUrl: "#"
-  },
-  {
-    _id: 'def-port-6',
-    title: "Brand Identity Redesign",
-    category: "Graphic Design",
-    description: "Complete visual overhaul for a tech startup, resulting in a 200% increase in brand recognition and user trust.",
-    technologies: ["Figma", "UI/UX", "3D Rendering"],
-    imageUrl: "",
-    liveDemoUrl: "#",
-    githubUrl: "#"
-  }
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -82,27 +19,31 @@ const itemVariants = {
 const Portfolio = () => {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchPortfolioData = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const data = await api.getPortfolio();
-        const deletedIds = new Set(
-          JSON.parse(localStorage.getItem('overclock_deleted_portfolio_ids') || '[]')
-        );
-        if (Array.isArray(data)) {
-          setProjects(data.filter(p => !deletedIds.has(p._id)));
-        } else {
-          setProjects([]);
+        if (isMounted) {
+          setProjects(Array.isArray(data) ? data : []);
         }
       } catch (err) {
-        console.warn('Backend API connection failed, using local/empty portfolio data:', err);
-        setProjects([]);
+        if (isMounted) {
+          setError(err.message || 'Unable to load portfolio projects at this time.');
+          setProjects([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchPortfolioData();
+    return () => { isMounted = false; };
   }, []);
 
   return (
@@ -139,10 +80,20 @@ const Portfolio = () => {
           </motion.p>
         </div>
 
-        {/* Portfolio Grid */}
+        {/* Portfolio Grid / States */}
         {loading ? (
-          <div className="text-center py-20 text-slate-400 font-medium animate-pulse">
+          <div className="text-center py-20 text-slate-400 font-medium animate-pulse flex items-center justify-center gap-3">
+            <span className="w-3 h-3 bg-primary rounded-full animate-ping"></span>
             Loading portfolio...
+          </div>
+        ) : error ? (
+          <div className="max-w-md mx-auto text-center py-12 px-6 bg-[#0e3a4b] border border-red-500/30 text-rose-300">
+            <AlertCircle size={36} className="mx-auto mb-3 text-rose-400" />
+            <p className="font-semibold">{error}</p>
+          </div>
+        ) : projects.length === 0 ? (
+          <div className="text-center py-20 text-slate-400 font-medium bg-[#0e3a4b]/50 border border-slate-700/50 p-8 max-w-lg mx-auto">
+            No portfolio projects to display currently. Check back soon.
           </div>
         ) : (
           <motion.div 
@@ -172,7 +123,7 @@ const Portfolio = () => {
 
                     {/* Hover Overlay */}
                     <div className="absolute inset-0 bg-gradient-to-t from-[#022b3a]/90 to-[#022b3a]/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center gap-4">
-                      {project.liveDemoUrl && (
+                      {project.liveDemoUrl && project.liveDemoUrl !== '#' && (
                         <a 
                           href={project.liveDemoUrl} 
                           target="_blank" 
@@ -183,7 +134,7 @@ const Portfolio = () => {
                           <ExternalLink size={24} />
                         </a>
                       )}
-                      {project.githubUrl && (
+                      {project.githubUrl && project.githubUrl !== '#' && (
                         <a 
                           href={project.githubUrl} 
                           target="_blank" 

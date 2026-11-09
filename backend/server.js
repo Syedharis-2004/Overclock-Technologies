@@ -4,15 +4,15 @@ const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 const errorHandler = require('./middlewares/error');
 
-// Load env variables
+// Load environment variables
 dotenv.config();
-
-// Connect to database
-connectDB();
 
 const app = express();
 
-// Middleware
+// Trust proxy for secure cookies / headers on Vercel / reverse proxy
+app.set('trust proxy', 1);
+
+// CORS configuration
 const allowedOrigins = [
   'https://overclock-technologies.vercel.app',
   'http://localhost:5173',
@@ -26,14 +26,15 @@ if (process.env.CLIENT_URL) {
 
 const corsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, curl, server-to-server)
+    // Allow non-browser requests or curls
     if (!origin) return callback(null, true);
 
     const cleanOrigin = origin.replace(/\/$/, '');
-
     if (
       allowedOrigins.includes(cleanOrigin) ||
-      /^https:\/\/overclock-technologies.*\.vercel\.app$/.test(cleanOrigin)
+      /^https:\/\/overclock-technologies.*\.vercel\.app$/.test(cleanOrigin) ||
+      cleanOrigin.startsWith('http://localhost:') ||
+      cleanOrigin.startsWith('http://127.0.0.1:')
     ) {
       return callback(null, true);
     }
@@ -47,27 +48,61 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-app.use(express.json());
+// Body parsing with 10MB limit for base64 image uploads
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
-// Routes
+// Database connection middleware for serverless & traditional servers
+app.use(async (req, res, next) => {
+  // Allow root health ping without waiting on DB
+  if (req.path === '/' || req.path === '/api/health-check') {
+    return next();
+  }
+
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    console.error('Database connection middleware failed:', err.message);
+    res.status(503).json({
+      success: false,
+      error: 'Database connection failed. Please ensure your MongoDB cluster is running and MONGO_URI is configured correctly.',
+      details: err.message
+    });
+  }
+});
+
+// Root & Health Check routes
+app.get('/', (req, res) => {
+  res.send('Software House API is running...');
+});
+
+app.get('/api/health', (req, res) => {
+  const mongoose = require('mongoose');
+  const isConnected = mongoose.connection.readyState === 1;
+  res.status(isConnected ? 200 : 503).json({
+    success: isConnected,
+    database: isConnected ? 'connected' : 'disconnected',
+    timestamp: new Date().toISOString()
+  });
+});
+
+// API Routes
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/services', require('./routes/services'));
 app.use('/api/portfolio', require('./routes/portfolio'));
 app.use('/api/careers', require('./routes/careers'));
 app.use('/api/team', require('./routes/team'));
-// app.use('/api/blogs', require('./routes/blogs'));
-// app.use('/api/contact', require('./routes/contact'));
 
-app.get('/', (req, res) => {
-  res.send('Software House API is running...');
-});
-
+// Error handler middleware
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+if (process.env.NODE_ENV !== 'test') {
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
 module.exports = app;

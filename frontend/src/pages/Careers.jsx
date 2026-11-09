@@ -1,69 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Briefcase, MapPin, Clock, ArrowRight, CheckCircle2, Send, Sparkles, Upload } from 'lucide-react';
+import { Briefcase, MapPin, Clock, ArrowRight, CheckCircle2, Send, Sparkles, Upload, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
-
-const defaultCareers = [
-  {
-    _id: 'default-1',
-    title: 'Senior Full Stack Engineer',
-    department: 'Engineering',
-    location: 'Remote / Silicon Valley',
-    type: 'Full-time',
-    description: 'We are looking for a Senior Full Stack Engineer to lead the architecture and development of scalable web services and cloud architectures.',
-    requirements: [
-      '5+ years experience with React, Node.js, and TypeScript',
-      'Strong knowledge of GraphQL, RESTful APIs, and microservices architecture',
-      'Experience with AWS or GCP cloud deployments',
-      'Passion for high performance and clean code'
-    ],
-    isActive: true
-  },
-  {
-    _id: 'default-2',
-    title: 'AI / Machine Learning Engineer',
-    department: 'Artificial Intelligence',
-    location: 'Remote',
-    type: 'Full-time',
-    description: 'Join our AI team to design, train, and deploy next-generation LLM and machine learning models for enterprise data platforms.',
-    requirements: [
-      '3+ years experience with Python, PyTorch, or TensorFlow',
-      'Experience with RAG pipeline architectures and vector databases',
-      'Strong background in mathematical modeling and data pipelines',
-      'Published research or open source contributions are a plus'
-    ],
-    isActive: true
-  },
-  {
-    _id: 'default-3',
-    title: 'Lead UI/UX Product Designer',
-    department: 'Design',
-    location: 'On-site / Hybrid',
-    type: 'Full-time',
-    description: 'Create ultra-modern, high-impact user experiences for enterprise software and consumer digital products.',
-    requirements: [
-      '4+ years of UX/UI design experience for complex web & mobile products',
-      'Mastery of Figma, design systems, and rapid interactive prototyping',
-      'Deep understanding of micro-interactions and accessibility standards',
-      'Strong visual portfolio showcasing modern aesthetic execution'
-    ],
-    isActive: true
-  },
-  {
-    _id: 'default-4',
-    title: 'DevOps & Infrastructure Architect',
-    department: 'Infrastructure',
-    location: 'Remote',
-    type: 'Full-time',
-    description: 'Architect automated deployment pipelines, Kubernetes clusters, and zero-downtime infrastructure for high-scale applications.',
-    requirements: [
-      'Experience with Docker, Kubernetes, Terraform, and CI/CD pipelines',
-      'Proficiency in Cloud Security, Monitoring (Prometheus/Grafana), and Disaster Recovery',
-      'Strong scripting ability in Bash or Python'
-    ],
-    isActive: true
-  }
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -81,28 +19,36 @@ const itemVariants = {
 const Careers = () => {
   const [careers, setCareers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [selectedDept, setSelectedDept] = useState('All');
   const [selectedJob, setSelectedJob] = useState(null);
   const [applied, setApplied] = useState(false);
   const [cvFile, setCvFile] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchCareersData = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const data = await api.getCareers();
-        if (data && data.length > 0) {
-          setCareers(data.filter(c => c.isActive !== false));
-        } else {
-          setCareers(defaultCareers);
+        if (isMounted) {
+          const list = Array.isArray(data) ? data : [];
+          setCareers(list.filter(c => c.isActive !== false));
         }
-      } catch (error) {
-        console.warn('Backend API connection failed, using default careers data:', error);
-        setCareers(defaultCareers);
+      } catch (err) {
+        if (isMounted) {
+          setError(err.message || 'Unable to load career listings at this time.');
+          setCareers([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchCareersData();
+    return () => { isMounted = false; };
   }, []);
 
   const departments = ['All', ...new Set(careers.map(c => c.department || 'Engineering'))];
@@ -155,30 +101,38 @@ const Careers = () => {
         </div>
 
         {/* Department Filter Tabs */}
-        <div className="flex flex-wrap justify-center gap-3 mb-12">
-          {departments.map((dept) => (
-            <button
-              key={dept}
-              onClick={() => setSelectedDept(dept)}
-              className={`px-5 py-2 rounded text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
-                selectedDept === dept
-                  ? 'bg-primary text-[#022b3a] shadow-[0_0_15px_rgba(31,122,140,0.4)]'
-                  : 'bg-[#0e3a4b] text-slate-300 hover:bg-[#0e3a4b]/80 border border-primary/20'
-              }`}
-            >
-              {dept}
-            </button>
-          ))}
-        </div>
+        {departments.length > 1 && (
+          <div className="flex flex-wrap justify-center gap-3 mb-12">
+            {departments.map((dept) => (
+              <button
+                key={dept}
+                onClick={() => setSelectedDept(dept)}
+                className={`px-5 py-2 rounded text-xs font-bold uppercase tracking-wider transition-all duration-300 ${
+                  selectedDept === dept
+                    ? 'bg-primary text-[#022b3a] shadow-[0_0_15px_rgba(31,122,140,0.4)]'
+                    : 'bg-[#0e3a4b] text-slate-300 hover:bg-[#0e3a4b]/80 border border-primary/20'
+                }`}
+              >
+                {dept}
+              </button>
+            ))}
+          </div>
+        )}
 
-        {/* Loading State */}
+        {/* Loading / Error / Empty / Listings States */}
         {loading ? (
-          <div className="text-center py-20 text-slate-400 font-medium animate-pulse">
+          <div className="text-center py-20 text-slate-400 font-medium animate-pulse flex items-center justify-center gap-3">
+            <span className="w-3 h-3 bg-primary rounded-full animate-ping"></span>
             Loading positions...
           </div>
+        ) : error ? (
+          <div className="max-w-md mx-auto text-center py-12 px-6 bg-[#0e3a4b] border border-red-500/30 text-rose-300">
+            <AlertCircle size={36} className="mx-auto mb-3 text-rose-400" />
+            <p className="font-semibold">{error}</p>
+          </div>
         ) : filteredCareers.length === 0 ? (
-          <div className="text-center py-16 bg-[#0e3a4b]/40 border border-primary/20 p-8 rounded text-slate-400">
-            No open positions currently available in this department.
+          <div className="text-center py-16 bg-[#0e3a4b]/40 border border-primary/20 p-8 rounded text-slate-400 max-w-lg mx-auto">
+            No open positions currently available. Please check back soon.
           </div>
         ) : (
           /* Job Listings Grid */

@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const PortfolioSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Please add a project title']
+    required: [true, 'Please add a project title'],
+    trim: true
   },
   description: {
     type: String,
@@ -11,29 +12,32 @@ const PortfolioSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    required: [true, 'Please specify category (e.g., Web, Mobile, AI)']
+    required: [true, 'Please specify category (e.g., Web, Mobile, AI)'],
+    trim: true
   },
   technologies: {
     type: [String],
-    required: true
+    default: []
   },
   imageUrl: {
     type: String,
-    required: true
+    default: ''
   },
   liveDemoUrl: {
-    type: String
+    type: String,
+    default: ''
   },
   githubUrl: {
-    type: String
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+    type: String,
+    default: ''
   },
   order: {
     type: Number,
     default: 0
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

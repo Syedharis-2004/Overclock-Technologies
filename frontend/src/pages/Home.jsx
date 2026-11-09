@@ -1,30 +1,27 @@
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { Code, PenTool, BrainCircuit, LineChart, ChevronRight } from 'lucide-react';
+import { 
+  Code, PenTool, BrainCircuit, LineChart, ChevronRight, 
+  Smartphone, Cloud, Shield, Database, Layers 
+} from 'lucide-react';
 import coverImg from '../assets/cover.jpg';
+import { api } from '../services/api';
 
-const services = [
-  {
-    icon: <Code size={32} className="text-primary group-hover:scale-110 transition-transform duration-300" />,
-    title: "Web & Software Development",
-    desc: "Custom scalable web applications and enterprise software solutions.",
-  },
-  {
-    icon: <PenTool size={32} className="text-primary group-hover:scale-110 transition-transform duration-300" />,
-    title: "Graphic Design",
-    desc: "Stunning visual identities, UI/UX design, and creative branding.",
-  },
-  {
-    icon: <BrainCircuit size={32} className="text-primary group-hover:scale-110 transition-transform duration-300" />,
-    title: "AI & Data Solutions",
-    desc: "Intelligent automation and data-driven insights to accelerate growth.",
-  },
-  {
-    icon: <LineChart size={32} className="text-primary group-hover:scale-110 transition-transform duration-300" />,
-    title: "Consultation & Strategy",
-    desc: "Expert guidance to navigate digital transformation effectively.",
+const renderIcon = (iconName) => {
+  const iconProps = { size: 32, className: "text-primary group-hover:scale-110 transition-transform duration-300" };
+  switch (iconName) {
+    case 'Code': return <Code {...iconProps} />;
+    case 'PenTool': return <PenTool {...iconProps} />;
+    case 'BrainCircuit': return <BrainCircuit {...iconProps} />;
+    case 'LineChart': return <LineChart {...iconProps} />;
+    case 'Smartphone': return <Smartphone {...iconProps} />;
+    case 'Cloud': return <Cloud {...iconProps} />;
+    case 'Shield': return <Shield {...iconProps} />;
+    case 'Database': return <Database {...iconProps} />;
+    default: return <Layers {...iconProps} />;
   }
-];
+};
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -42,6 +39,33 @@ const itemVariants = {
 };
 
 const Home = () => {
+  const [services, setServices] = useState([]);
+  const [loadingServices, setLoadingServices] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    const fetchServices = async () => {
+      try {
+        setLoadingServices(true);
+        const data = await api.getServices();
+        if (isMounted) {
+          setServices(Array.isArray(data) ? data : []);
+        }
+      } catch (err) {
+        console.warn('Failed to load services for home preview:', err);
+      } finally {
+        if (isMounted) {
+          setLoadingServices(false);
+        }
+      }
+    };
+    fetchServices();
+    return () => { isMounted = false; };
+  }, []);
+
+  // Display top 4 services
+  const displayedServices = services.slice(0, 4);
+
   return (
     <div className="min-h-screen bg-[#022b3a]">
       {/* Hero Section */}
@@ -96,34 +120,45 @@ const Home = () => {
             </p>
           </div>
 
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
-          >
-            {services.map((service, index) => (
-              <motion.div
-                key={index}
-                variants={itemVariants}
-                whileHover={{
-                  y: -10,
-                  boxShadow: "0 10px 30px -10px rgba(31, 122, 140, 0.4)",
-                  borderColor: "var(--color-primary)"
-                }}
-                className="bg-[#0e3a4b] p-8 border-t-2 border-transparent transition-all duration-300 group cursor-pointer"
-              >
-                <div className="mb-6">{service.icon}</div>
-                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-primary transition-colors duration-300" style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 500 }}>{service.title}</h3>
-                <p className="text-slate-400 text-sm leading-relaxed">{service.desc}</p>
+          {loadingServices ? (
+            <div className="text-center py-12 text-slate-400 font-medium animate-pulse flex items-center justify-center gap-2">
+              <span className="w-2.5 h-2.5 bg-primary rounded-full animate-ping"></span>
+              Loading services...
+            </div>
+          ) : displayedServices.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 font-medium">
+              Services will appear here once configured in the Admin Panel.
+            </div>
+          ) : (
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8"
+            >
+              {displayedServices.map((service, index) => (
+                <motion.div
+                  key={service._id || index}
+                  variants={itemVariants}
+                  whileHover={{
+                    y: -10,
+                    boxShadow: "0 10px 30px -10px rgba(31, 122, 140, 0.4)",
+                    borderColor: "var(--color-primary)"
+                  }}
+                  className="bg-[#0e3a4b] p-8 border-t-2 border-transparent transition-all duration-300 group cursor-pointer"
+                >
+                  <div className="mb-6">{renderIcon(service.icon)}</div>
+                  <h3 className="text-xl font-bold text-white mb-3 group-hover:text-primary transition-colors duration-300" style={{ fontFamily: "'Orbitron', sans-serif", fontWeight: 500 }}>{service.title}</h3>
+                  <p className="text-slate-400 text-sm leading-relaxed">{service.description || service.desc}</p>
 
-                <div className="mt-6 flex items-center text-primary text-sm font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                  Learn More <ChevronRight size={16} className="ml-1" />
-                </div>
-              </motion.div>
-            ))}
-          </motion.div>
+                  <Link to="/services" className="mt-6 flex items-center text-primary text-sm font-bold uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    Learn More <ChevronRight size={16} className="ml-1" />
+                  </Link>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </div>
       </section>
 

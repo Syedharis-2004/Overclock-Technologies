@@ -3,7 +3,8 @@ const mongoose = require('mongoose');
 const CareerSchema = new mongoose.Schema({
   title: {
     type: String,
-    required: [true, 'Please add a job title']
+    required: [true, 'Please add a job title'],
+    trim: true
   },
   description: {
     type: String,
@@ -11,32 +12,34 @@ const CareerSchema = new mongoose.Schema({
   },
   department: {
     type: String,
-    required: [true, 'Please specify department']
+    required: [true, 'Please specify department'],
+    trim: true
   },
   location: {
     type: String,
-    required: [true, 'Please specify location (e.g., Remote, On-site)']
+    required: [true, 'Please specify location (e.g., Remote, On-site)'],
+    trim: true
   },
   type: {
     type: String,
-    enum: ['Full-time', 'Part-time', 'Contract', 'Internship'],
-    required: true
+    default: 'Full-time',
+    trim: true
   },
   requirements: {
     type: [String],
-    required: true
+    default: []
   },
   isActive: {
     type: Boolean,
     default: true
   },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  },
   order: {
     type: Number,
     default: 0
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 

@@ -1,25 +1,13 @@
 const User = require('../models/User');
 const asyncHandler = require('../middlewares/async');
-const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
-
-// Default admin credentials for use when MongoDB is not connected
-const ADMIN_EMAIL = 'admin@overclock.com';
-const ADMIN_PASSWORD = 'Ot@54321';
-
-const isDBConnected = () => mongoose.connection.readyState === 1;
 
 // @desc    Register user
 // @route   POST /api/auth/register
 // @access  Public
 exports.register = asyncHandler(async (req, res, next) => {
-  if (!isDBConnected()) {
-    return res.status(503).json({ success: false, error: 'Database not available. Registration requires MongoDB.' });
-  }
-
   const { name, email, password, role } = req.body;
   const user = await User.create({ name, email, password, role });
-  sendTokenResponse(user, 200, res);
+  sendTokenResponse(user, 201, res);
 });
 
 // @desc    Login user
@@ -32,62 +20,55 @@ exports.login = asyncHandler(async (req, res, next) => {
     return res.status(400).json({ success: false, error: 'Please provide an email and password' });
   }
 
-  // If MongoDB is not connected, fall back to hardcoded admin credentials
-  if (!isDBConnected()) {
-    if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-      const token = jwt.sign(
-        { id: 'admin-standalone', role: 'admin' },
-        process.env.JWT_SECRET || 'overclock_secret_fallback',
-        { expiresIn: '30d' }
-      );
-      return res.status(200).json({ success: true, token });
+  // Check for user in database
+  let user = await User.findOne({ email }).select('+password');
+
+  // If initial admin user has not been seeded yet into this database instance, seed it automatically
+  if (!user && email === 'admin@overclock.com' && password === 'Ot@54321') {
+    const adminCount = await User.countDocuments({ role: 'admin' });
+    if (adminCount === 0) {
+      user = await User.create({
+        name: 'Super Admin',
+        email: 'admin@overclock.com',
+        password: 'Ot@54321',
+        role: 'admin'
+      });
+      return sendTokenResponse(user, 200, res);
     }
+  }
+
+  if (!user) {
     return res.status(401).json({ success: false, error: 'Invalid credentials' });
   }
 
-  // DB-backed login with fallback
-  try {
-    const user = await User.findOne({ email }).select('+password');
-
-    if (user) {
-      const isMatch = await user.matchPassword(password);
-      if (isMatch) {
-        return sendTokenResponse(user, 200, res);
-      }
-    }
-  } catch (err) {
-    console.warn('DB lookup failed in login, falling back to admin check:', err.message);
+  const isMatch = await user.matchPassword(password);
+  if (!isMatch) {
+    return res.status(401).json({ success: false, error: 'Invalid credentials' });
   }
 
-  if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-    const token = jwt.sign(
-      { id: 'admin-standalone', role: 'admin' },
-      process.env.JWT_SECRET || 'overclock_secret_fallback',
-      { expiresIn: '30d' }
-    );
-    return res.status(200).json({ success: true, token });
-  }
-
-  return res.status(401).json({ success: false, error: 'Invalid credentials' });
+  sendTokenResponse(user, 200, res);
 });
 
 // @desc    Get current logged in user
 // @route   GET /api/auth/me
 // @access  Private
 exports.getMe = asyncHandler(async (req, res, next) => {
-  if (!isDBConnected()) {
-    return res.status(200).json({
-      success: true,
-      data: { id: 'admin-standalone', name: 'Super Admin', email: ADMIN_EMAIL, role: 'admin' }
-    });
+  const user = await User.findById(req.user.id);
+  if (!user) {
+    return res.status(404).json({ success: false, error: 'User not found' });
   }
 
-  const user = await User.findById(req.user.id);
-  res.status(200).json({ success: true, data: user });
+  res.status(200).json({
+    success: true,
+    data: user
+  });
 });
 
-// Get token from model, create cookie and send response
+// Get token from model and send response
 const sendTokenResponse = (user, statusCode, res) => {
   const token = user.getSignedJwtToken();
-  res.status(statusCode).json({ success: true, token });
+  res.status(statusCode).json({
+    success: true,
+    token
+  });
 };

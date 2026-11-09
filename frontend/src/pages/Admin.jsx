@@ -92,12 +92,24 @@ const Admin = () => {
       ]);
 
       if (cRes.status === 'fulfilled') setCareers(cRes.value || []);
+      else console.error('Careers load error:', cRes.reason);
+
       if (sRes.status === 'fulfilled') setServices(sRes.value || []);
+      else console.error('Services load error:', sRes.reason);
+
       if (tRes.status === 'fulfilled') setTeam(tRes.value || []);
+      else console.error('Team load error:', tRes.reason);
+
       if (pRes.status === 'fulfilled') setPortfolio(pRes.value || []);
+      else console.error('Portfolio load error:', pRes.reason);
+
+      const failedCount = [cRes, sRes, tRes, pRes].filter(r => r.status === 'rejected').length;
+      if (failedCount > 0) {
+        showToast(`Could not connect to database for ${failedCount} module(s).`, 'error');
+      }
     } catch (error) {
       console.error('Error loading data:', error);
-      showToast('Could not reach backend database. Using local state.', 'error');
+      showToast(error.message || 'Could not reach backend database.', 'error');
     } finally {
       setLoadingData(false);
     }
@@ -148,10 +160,13 @@ const Admin = () => {
     handleDragEnd();
 
     try {
-      await api.reorder(activeTab, reordered);
+      const serverReordered = await api.reorder(activeTab, reordered);
+      if (Array.isArray(serverReordered)) setList(serverReordered);
       showToast(`${getTabLabel(activeTab)} reordered`);
     } catch (err) {
       console.warn('Reorder sync error:', err);
+      showToast(err.message || 'Reorder sync failed', 'error');
+      setList(currentList);
     }
   };
 
@@ -173,10 +188,13 @@ const Admin = () => {
     setList(reordered);
 
     try {
-      await api.reorder(activeTab, reordered);
+      const serverReordered = await api.reorder(activeTab, reordered);
+      if (Array.isArray(serverReordered)) setList(serverReordered);
       showToast(`${getTabLabel(activeTab)} order updated`);
     } catch (err) {
       console.warn('Reorder sync error:', err);
+      showToast(err.message || 'Reorder sync failed', 'error');
+      setList(currentList);
     }
   };
 
@@ -195,15 +213,6 @@ const Admin = () => {
         return;
       }
     } catch (err) {
-      // Fallback for standalone/mocked session when backend DB is disconnected or offline
-      if (email === 'admin@overclock.com' && password === 'Ot@54321') {
-        const dummyToken = 'admin-session-token-overclock';
-        localStorage.setItem('adminToken', dummyToken);
-        setToken(dummyToken);
-        showToast('Successfully logged in as Admin');
-        setAuthLoading(false);
-        return;
-      }
       setAuthError(err.message || 'Login failed. Invalid credentials.');
     } finally {
       setAuthLoading(false);
@@ -259,21 +268,12 @@ const Admin = () => {
             : formData.requirements
         };
         if (modalType === 'add') {
-          try {
-            const newItem = await api.createCareer(payload);
-            setCareers([newItem, ...careers]);
-          } catch {
-            const fallbackItem = { ...payload, _id: Date.now().toString() };
-            setCareers([fallbackItem, ...careers]);
-          }
+          const newItem = await api.createCareer(payload);
+          setCareers([newItem, ...careers]);
           showToast('Career opening added');
         } else {
-          try {
-            const updated = await api.updateCareer(currentItem._id, payload);
-            setCareers(careers.map(c => c._id === currentItem._id ? updated : c));
-          } catch {
-            setCareers(careers.map(c => c._id === currentItem._id ? { ...c, ...payload } : c));
-          }
+          const updated = await api.updateCareer(currentItem._id, payload);
+          setCareers(careers.map(c => c._id === currentItem._id ? updated : c));
           showToast('Career opening updated');
         }
       } else if (activeTab === 'services') {
@@ -283,41 +283,23 @@ const Admin = () => {
           benefits: typeof formData.benefits === 'string' ? formData.benefits.split(',').map(s => s.trim()).filter(Boolean) : formData.benefits
         };
         if (modalType === 'add') {
-          try {
-            const newItem = await api.createService(payload);
-            setServices([newItem, ...services]);
-          } catch {
-            const fallbackItem = { ...payload, _id: Date.now().toString() };
-            setServices([fallbackItem, ...services]);
-          }
+          const newItem = await api.createService(payload);
+          setServices([newItem, ...services]);
           showToast('Service added');
         } else {
-          try {
-            const updated = await api.updateService(currentItem._id, payload);
-            setServices(services.map(s => s._id === currentItem._id ? updated : s));
-          } catch {
-            setServices(services.map(s => s._id === currentItem._id ? { ...s, ...payload } : s));
-          }
+          const updated = await api.updateService(currentItem._id, payload);
+          setServices(services.map(s => s._id === currentItem._id ? updated : s));
           showToast('Service updated');
         }
       } else if (activeTab === 'team') {
         const payload = { ...formData, order: Number(formData.order) || 0 };
         if (modalType === 'add') {
-          try {
-            const newItem = await api.createTeamMember(payload);
-            setTeam([...team, newItem]);
-          } catch {
-            const fallbackItem = { ...payload, _id: Date.now().toString() };
-            setTeam([...team, fallbackItem]);
-          }
+          const newItem = await api.createTeamMember(payload);
+          setTeam([...team, newItem]);
           showToast('Team member added');
         } else {
-          try {
-            const updated = await api.updateTeamMember(currentItem._id, payload);
-            setTeam(team.map(t => t._id === currentItem._id ? updated : t));
-          } catch {
-            setTeam(team.map(t => t._id === currentItem._id ? { ...t, ...payload } : t));
-          }
+          const updated = await api.updateTeamMember(currentItem._id, payload);
+          setTeam(team.map(t => t._id === currentItem._id ? updated : t));
           showToast('Team member updated');
         }
       } else if (activeTab === 'portfolio') {
@@ -326,21 +308,12 @@ const Admin = () => {
           technologies: typeof formData.technologies === 'string' ? formData.technologies.split(',').map(s => s.trim()).filter(Boolean) : formData.technologies
         };
         if (modalType === 'add') {
-          try {
-            const newItem = await api.createPortfolio(payload);
-            setPortfolio([newItem, ...portfolio]);
-          } catch {
-            const fallbackItem = { ...payload, _id: Date.now().toString() };
-            setPortfolio([fallbackItem, ...portfolio]);
-          }
+          const newItem = await api.createPortfolio(payload);
+          setPortfolio([newItem, ...portfolio]);
           showToast('Portfolio project added');
         } else {
-          try {
-            const updated = await api.updatePortfolio(currentItem._id, payload);
-            setPortfolio(portfolio.map(p => p._id === currentItem._id ? updated : p));
-          } catch {
-            setPortfolio(portfolio.map(p => p._id === currentItem._id ? { ...p, ...payload } : p));
-          }
+          const updated = await api.updatePortfolio(currentItem._id, payload);
+          setPortfolio(portfolio.map(p => p._id === currentItem._id ? updated : p));
           showToast('Portfolio project updated');
         }
       }
@@ -373,12 +346,7 @@ const Admin = () => {
       }
     } catch (err) {
       console.error('Delete error:', err);
-      // Fallback state filter if network glitch
-      if (activeTab === 'careers') setCareers(prev => prev.filter(c => c._id !== id));
-      if (activeTab === 'services') setServices(prev => prev.filter(s => s._id !== id));
-      if (activeTab === 'team') setTeam(prev => prev.filter(t => t._id !== id));
-      if (activeTab === 'portfolio') setPortfolio(prev => prev.filter(p => p._id !== id));
-      showToast(err.message || 'Item deleted', 'info');
+      showToast(err.message || 'Delete operation failed', 'error');
     }
   };
 

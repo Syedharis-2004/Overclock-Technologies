@@ -3,23 +3,29 @@ const mongoose = require('mongoose');
 const TeamSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please add a name']
+    required: [true, 'Please add a name'],
+    trim: true
   },
   role: {
     type: String,
-    required: [true, 'Please add a role or designation']
+    required: [true, 'Please add a role or designation'],
+    trim: true
   },
   bio: {
-    type: String
+    type: String,
+    default: ''
   },
   imageUrl: {
-    type: String
+    type: String,
+    default: ''
   },
   linkedin: {
-    type: String
+    type: String,
+    default: ''
   },
   twitter: {
-    type: String
+    type: String,
+    default: ''
   },
   order: {
     type: Number,

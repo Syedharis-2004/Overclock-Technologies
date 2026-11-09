@@ -1,46 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Target, Zap, Users, Globe, Share2 } from 'lucide-react';
+import { Target, Zap, Users, Globe, Share2, AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
-
-const defaultTeam = [
-  {
-    _id: 'def-1',
-    name: 'Alex Mercer',
-    role: 'CEO & Founder',
-    bio: 'Visionary technology leader with 15+ years experience building enterprise systems.',
-    imageUrl: '',
-    linkedin: '#',
-    twitter: '#'
-  },
-  {
-    _id: 'def-2',
-    name: 'Sophia Chen',
-    role: 'Chief Technology Officer',
-    bio: 'Expert in distributed cloud architecture, AI systems, and scalable backend platforms.',
-    imageUrl: '',
-    linkedin: '#',
-    twitter: '#'
-  },
-  {
-    _id: 'def-3',
-    name: 'David Vance',
-    role: 'VP of Engineering',
-    bio: 'Specialist in agile engineering practices, continuous delivery, and system security.',
-    imageUrl: '',
-    linkedin: '#',
-    twitter: '#'
-  },
-  {
-    _id: 'def-4',
-    name: 'Elena Rostova',
-    role: 'Head of Product & Design',
-    bio: 'Award-winning product strategist crafting modern visual aesthetics and intuitive UX.',
-    imageUrl: '',
-    linkedin: '#',
-    twitter: '#'
-  }
-];
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -57,22 +18,32 @@ const itemVariants = {
 
 const About = () => {
   const [team, setTeam] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchTeamMembers = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const data = await api.getTeam();
-        if (data && data.length > 0) {
-          setTeam(data);
-        } else {
-          setTeam(defaultTeam);
+        if (isMounted) {
+          setTeam(Array.isArray(data) ? data : []);
         }
       } catch (err) {
-        console.warn('Backend API connection failed, using default team data:', err);
-        setTeam(defaultTeam);
+        if (isMounted) {
+          setError(err.message || 'Unable to load leadership team data.');
+          setTeam([]);
+        }
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchTeamMembers();
+    return () => { isMounted = false; };
   }, []);
 
   return (
@@ -166,52 +137,68 @@ const About = () => {
             <div className="w-20 h-1 bg-primary mx-auto shadow-[0_0_10px_rgba(0,157,177,0.8)]"></div>
           </div>
           
-          <motion.div 
-            variants={containerVariants}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8"
-          >
-            {team.map((member, index) => (
-              <motion.div 
-                key={member._id || index}
-                variants={itemVariants}
-                whileHover={{ y: -5 }}
-                className="group cursor-pointer"
-              >
-                <div className="aspect-square bg-[#0e3a4b] mb-5 overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 flex items-center justify-center relative shadow-lg group-hover:shadow-[0_0_25px_rgba(31,122,140,0.4)]">
-                  {member.imageUrl ? (
-                    <img src={member.imageUrl} alt={member.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                  ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-[#0e3a4b] to-[#022b3a]">
-                      <span className="text-slate-500 font-bold text-4xl group-hover:text-primary transition-colors duration-300">
-                        {member.name ? member.name.split(' ').map(n => n[0]).join('') : `T${index + 1}`}
-                      </span>
-                    </div>
-                  )}
-                  {/* Subtle overlay on hover */}
-                  <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
-                    <div className="flex gap-3">
-                      {member.linkedin && (
-                        <a href={member.linkedin} target="_blank" rel="noreferrer" className="p-2 bg-[#022b3a] text-primary hover:text-white rounded-full transition-colors" title="LinkedIn">
-                          <Globe size={16} />
-                        </a>
-                      )}
-                      {member.twitter && (
-                        <a href={member.twitter} target="_blank" rel="noreferrer" className="p-2 bg-[#022b3a] text-primary hover:text-white rounded-full transition-colors" title="Twitter">
-                          <Share2 size={16} />
-                        </a>
-                      )}
+          {loading ? (
+            <div className="text-center py-16 text-slate-400 font-medium animate-pulse flex items-center justify-center gap-3">
+              <span className="w-3 h-3 bg-primary rounded-full animate-ping"></span>
+              Loading leadership team...
+            </div>
+          ) : error ? (
+            <div className="max-w-md mx-auto text-center py-12 px-6 bg-[#0e3a4b] border border-red-500/30 text-rose-300">
+              <AlertCircle size={36} className="mx-auto mb-3 text-rose-400" />
+              <p className="font-semibold">{error}</p>
+            </div>
+          ) : team.length === 0 ? (
+            <div className="text-center py-12 text-slate-400 font-medium">
+              Leadership profiles will be available soon.
+            </div>
+          ) : (
+            <motion.div 
+              variants={containerVariants}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8"
+            >
+              {team.map((member, index) => (
+                <motion.div 
+                  key={member._id || index}
+                  variants={itemVariants}
+                  whileHover={{ y: -5 }}
+                  className="group cursor-pointer"
+                >
+                  <div className="aspect-square bg-[#0e3a4b] mb-5 overflow-hidden border-2 border-transparent group-hover:border-primary transition-all duration-300 flex items-center justify-center relative shadow-lg group-hover:shadow-[0_0_25px_rgba(31,122,140,0.4)]">
+                    {member.imageUrl ? (
+                      <img src={member.imageUrl} alt={member.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                    ) : (
+                      <div className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-b from-[#0e3a4b] to-[#022b3a]">
+                        <span className="text-slate-500 font-bold text-4xl group-hover:text-primary transition-colors duration-300">
+                          {member.name ? member.name.split(' ').map(n => n[0]).join('') : `T${index + 1}`}
+                        </span>
+                      </div>
+                    )}
+                    {/* Subtle overlay on hover */}
+                    <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end justify-center p-4">
+                      <div className="flex gap-3">
+                        {member.linkedin && member.linkedin !== '#' && (
+                          <a href={member.linkedin} target="_blank" rel="noreferrer" className="p-2 bg-[#022b3a] text-primary hover:text-white rounded-full transition-colors" title="LinkedIn">
+                            <Globe size={16} />
+                          </a>
+                        )}
+                        {member.twitter && member.twitter !== '#' && (
+                          <a href={member.twitter} target="_blank" rel="noreferrer" className="p-2 bg-[#022b3a] text-primary hover:text-white rounded-full transition-colors" title="Twitter">
+                            <Share2 size={16} />
+                          </a>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-                <h4 className="text-lg font-bold text-white uppercase tracking-wider group-hover:text-primary transition-colors">{member.name}</h4>
-                <p className="text-primary text-xs font-semibold tracking-widest uppercase mt-1">{member.role}</p>
-                {member.bio && <p className="text-slate-400 text-xs mt-2 leading-relaxed">{member.bio}</p>}
-              </motion.div>
-            ))}
-          </motion.div>
+                  <h4 className="text-lg font-bold text-white uppercase tracking-wider group-hover:text-primary transition-colors">{member.name}</h4>
+                  <p className="text-primary text-xs font-semibold tracking-widest uppercase mt-1">{member.role}</p>
+                  {member.bio && <p className="text-slate-400 text-xs mt-2 leading-relaxed">{member.bio}</p>}
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
         </motion.div>
 
       </div>

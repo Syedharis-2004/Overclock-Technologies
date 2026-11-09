@@ -1,70 +1,15 @@
 const Portfolio = require('../models/Portfolio');
 const asyncHandler = require('../middlewares/async');
-const mongoose = require('mongoose');
-
-const isDBConnected = () => mongoose.connection.readyState === 1;
-
-let inMemoryPortfolios = [
-  {
-    _id: 'pf-1',
-    title: 'Enterprise AI Analytics Dashboard',
-    category: 'AI & Data Solutions',
-    description: 'Real-time predictive analytics dashboard processing 1M+ events per second for global SaaS enterprise.',
-    technologies: ['React', 'Node.js', 'Python', 'TensorFlow', 'AWS'],
-    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
-    liveDemoUrl: 'https://example.com',
-    githubUrl: 'https://github.com',
-    createdAt: new Date()
-  },
-  {
-    _id: 'pf-2',
-    title: 'FinTech Mobile Banking Application',
-    category: 'Mobile App Development',
-    description: 'High-security mobile banking platform with instant payments, biometric login, and card management.',
-    technologies: ['React Native', 'Node.js', 'Express', 'MongoDB', 'TailwindCSS'],
-    imageUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3?auto=format&fit=crop&w=800&q=80',
-    liveDemoUrl: 'https://example.com',
-    githubUrl: 'https://github.com',
-    createdAt: new Date()
-  },
-  {
-    _id: 'pf-3',
-    title: 'E-Commerce Global Logistics Platform',
-    category: 'Web & Software Development',
-    description: 'End-to-end supply chain management portal with automated inventory tracking and route optimization.',
-    technologies: ['Next.js', 'TypeScript', 'PostgreSQL', 'Docker', 'GraphQL'],
-    imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
-    liveDemoUrl: 'https://example.com',
-    githubUrl: 'https://github.com',
-    createdAt: new Date()
-  }
-];
-
-let deletedPortfolioIds = new Set();
 
 // @desc    Get all portfolio projects
 // @route   GET /api/portfolio
 // @access  Public
 exports.getPortfolios = asyncHandler(async (req, res, next) => {
-  if (isDBConnected()) {
-    try {
-      const portfolios = await Portfolio.find().sort({ order: 1, createdAt: -1 });
-      const nonDeleted = portfolios.filter(p => !deletedPortfolioIds.has(p._id.toString()));
-      return res.status(200).json({
-        success: true,
-        count: nonDeleted.length,
-        data: nonDeleted
-      });
-    } catch (err) {
-      console.warn('DB query failed in getPortfolios, using fallback:', err.message);
-    }
-  }
-
-  const filtered = inMemoryPortfolios.filter(p => !deletedPortfolioIds.has(p._id));
+  const portfolios = await Portfolio.find().sort({ order: 1, createdAt: -1 });
   res.status(200).json({
     success: true,
-    count: filtered.length,
-    data: filtered
+    count: portfolios.length,
+    data: portfolios
   });
 });
 
@@ -72,48 +17,25 @@ exports.getPortfolios = asyncHandler(async (req, res, next) => {
 // @route   GET /api/portfolio/:id
 // @access  Public
 exports.getPortfolio = asyncHandler(async (req, res, next) => {
-  if (isDBConnected()) {
-    try {
-      const portfolio = await Portfolio.findById(req.params.id);
-      if (portfolio) {
-        return res.status(200).json({ success: true, data: portfolio });
-      }
-    } catch (err) {
-      console.warn('DB query failed in getPortfolio, using fallback:', err.message);
-    }
-  }
-
-  const item = inMemoryPortfolios.find(p => p._id === req.params.id);
-  if (!item) {
+  const portfolio = await Portfolio.findById(req.params.id);
+  if (!portfolio) {
     return res.status(404).json({ success: false, error: 'Portfolio item not found' });
   }
 
-  res.status(200).json({ success: true, data: item });
+  res.status(200).json({
+    success: true,
+    data: portfolio
+  });
 });
 
 // @desc    Create new portfolio project
 // @route   POST /api/portfolio
 // @access  Private/Admin
 exports.createPortfolio = asyncHandler(async (req, res, next) => {
-  if (isDBConnected()) {
-    try {
-      const portfolio = await Portfolio.create(req.body);
-      return res.status(201).json({ success: true, data: portfolio });
-    } catch (err) {
-      console.warn('DB create failed in createPortfolio, using fallback:', err.message);
-    }
-  }
-
-  const newItem = {
-    _id: 'pf-' + Date.now(),
-    ...req.body,
-    createdAt: new Date()
-  };
-  inMemoryPortfolios.unshift(newItem);
-
+  const portfolio = await Portfolio.create(req.body);
   res.status(201).json({
     success: true,
-    data: newItem
+    data: portfolio
   });
 });
 
@@ -121,49 +43,35 @@ exports.createPortfolio = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/portfolio/:id
 // @access  Private/Admin
 exports.updatePortfolio = asyncHandler(async (req, res, next) => {
-  if (isDBConnected()) {
-    try {
-      let portfolio = await Portfolio.findById(req.params.id);
-      if (portfolio) {
-        portfolio = await Portfolio.findByIdAndUpdate(req.params.id, req.body, {
-          new: true,
-          runValidators: true
-        });
-        return res.status(200).json({ success: true, data: portfolio });
-      }
-    } catch (err) {
-      console.warn('DB update failed in updatePortfolio, using fallback:', err.message);
-    }
+  const portfolio = await Portfolio.findByIdAndUpdate(req.params.id, req.body, {
+    returnDocument: 'after',
+    runValidators: true
+  });
+
+  if (!portfolio) {
+    return res.status(404).json({ success: false, error: 'Portfolio item not found' });
   }
 
-  const index = inMemoryPortfolios.findIndex(p => p._id === req.params.id);
-  if (index !== -1) {
-    inMemoryPortfolios[index] = { ...inMemoryPortfolios[index], ...req.body };
-    return res.status(200).json({ success: true, data: inMemoryPortfolios[index] });
-  }
-
-  const updatedItem = { _id: req.params.id, ...req.body };
-  inMemoryPortfolios.unshift(updatedItem);
-  res.status(200).json({ success: true, data: updatedItem });
+  res.status(200).json({
+    success: true,
+    data: portfolio
+  });
 });
 
 // @desc    Delete portfolio project
 // @route   DELETE /api/portfolio/:id
 // @access  Private/Admin
 exports.deletePortfolio = asyncHandler(async (req, res, next) => {
-  const id = req.params.id;
-  deletedPortfolioIds.add(id);
+  const portfolio = await Portfolio.findByIdAndDelete(req.params.id);
 
-  if (isDBConnected()) {
-    try {
-      await Portfolio.findByIdAndDelete(id);
-    } catch (err) {
-      console.warn('DB delete failed in deletePortfolio, using fallback:', err.message);
-    }
+  if (!portfolio) {
+    return res.status(404).json({ success: false, error: 'Portfolio item not found' });
   }
 
-  inMemoryPortfolios = inMemoryPortfolios.filter(p => p._id !== id);
-  res.status(200).json({ success: true, data: {} });
+  res.status(200).json({
+    success: true,
+    data: {}
+  });
 });
 
 // @desc    Reorder portfolio projects
@@ -171,27 +79,23 @@ exports.deletePortfolio = asyncHandler(async (req, res, next) => {
 // @access  Private/Admin
 exports.reorderPortfolios = asyncHandler(async (req, res, next) => {
   const { orderedIds } = req.body;
-  if (Array.isArray(orderedIds)) {
-    if (isDBConnected()) {
-      try {
-        for (let i = 0; i < orderedIds.length; i++) {
-          await Portfolio.findByIdAndUpdate(orderedIds[i], { order: i });
-        }
-      } catch (err) {
-        console.warn('DB reorder failed in portfolio:', err.message);
-      }
-    }
 
-    const map = new Map(inMemoryPortfolios.map(p => [p._id, p]));
-    const reordered = [];
-    orderedIds.forEach(id => {
-      if (map.has(id)) {
-        reordered.push(map.get(id));
-        map.delete(id);
-      }
+  if (!Array.isArray(orderedIds)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Please provide an array of orderedIds'
     });
-    inMemoryPortfolios = [...reordered, ...map.values()];
   }
 
-  res.status(200).json({ success: true, data: inMemoryPortfolios });
+  const updates = orderedIds.map((id, index) =>
+    Portfolio.findByIdAndUpdate(id, { order: index })
+  );
+  await Promise.all(updates);
+
+  const reordered = await Portfolio.find().sort({ order: 1, createdAt: -1 });
+
+  res.status(200).json({
+    success: true,
+    data: reordered
+  });
 });

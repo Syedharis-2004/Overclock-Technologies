@@ -1,58 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Code, PenTool, BrainCircuit, LineChart, Database, Smartphone, Shield, Cloud, ChevronRight, Layers } from 'lucide-react';
+import { Code, PenTool, BrainCircuit, LineChart, Database, Smartphone, Shield, Cloud, ChevronRight, Layers, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { api } from '../services/api';
-
-const defaultServices = [
-  {
-    _id: 'def-srv-1',
-    icon: 'Code',
-    title: "Web & Software Development",
-    description: "Custom scalable web applications, enterprise software solutions, and robust APIs tailored to your business needs."
-  },
-  {
-    _id: 'def-srv-2',
-    icon: 'PenTool',
-    title: "Graphic Design",
-    description: "Stunning visual identities, UI/UX design, branding, and marketing materials that captivate your audience."
-  },
-  {
-    _id: 'def-srv-3',
-    icon: 'BrainCircuit',
-    title: "AI & Data Solutions",
-    description: "Intelligent automation, machine learning models, and data-driven insights to accelerate your growth."
-  },
-  {
-    _id: 'def-srv-4',
-    icon: 'LineChart',
-    title: "Consultation & Strategy",
-    description: "Expert guidance to navigate digital transformation, optimize workflows, and scale your tech infrastructure."
-  },
-  {
-    _id: 'def-srv-5',
-    icon: 'Smartphone',
-    title: "Mobile App Development",
-    description: "High-performance iOS and Android applications built with modern frameworks for seamless user experiences."
-  },
-  {
-    _id: 'def-srv-6',
-    icon: 'Cloud',
-    title: "Cloud & DevOps",
-    description: "Scalable cloud architecture, CI/CD pipelines, and infrastructure management on AWS, Azure, and Google Cloud."
-  },
-  {
-    _id: 'def-srv-7',
-    icon: 'Shield',
-    title: "Cybersecurity",
-    description: "Comprehensive security audits, vulnerability assessments, and robust protection for your digital assets."
-  },
-  {
-    _id: 'def-srv-8',
-    icon: 'Database',
-    title: "Database Management",
-    description: "Optimized database design, migration, and maintenance ensuring data integrity and high availability."
-  }
-];
 
 const renderIcon = (iconName) => {
   const iconProps = { size: 40, className: "text-primary group-hover:scale-110 transition-transform duration-300" };
@@ -85,24 +34,31 @@ const itemVariants = {
 const Services = () => {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
+    let isMounted = true;
     const fetchServicesData = async () => {
       try {
+        setLoading(true);
+        setError(null);
         const data = await api.getServices();
-        if (data && data.length > 0) {
-          setServices(data);
-        } else {
-          setServices(defaultServices);
+        if (isMounted) {
+          setServices(Array.isArray(data) ? data : []);
         }
       } catch (err) {
-        console.warn('Backend API connection failed, using default services data:', err);
-        setServices(defaultServices);
+        if (isMounted) {
+          setError(err.message || 'Unable to load services at this time.');
+          setServices([]);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
     fetchServicesData();
+    return () => { isMounted = false; };
   }, []);
 
   return (
@@ -139,10 +95,20 @@ const Services = () => {
           </motion.p>
         </div>
 
-        {/* Services Grid */}
+        {/* Services Grid / States */}
         {loading ? (
-          <div className="text-center py-20 text-slate-400 font-medium animate-pulse">
+          <div className="text-center py-20 text-slate-400 font-medium animate-pulse flex items-center justify-center gap-3">
+            <span className="w-3 h-3 bg-primary rounded-full animate-ping"></span>
             Loading services...
+          </div>
+        ) : error ? (
+          <div className="max-w-md mx-auto text-center py-12 px-6 bg-[#0e3a4b] border border-red-500/30 text-rose-300">
+            <AlertCircle size={36} className="mx-auto mb-3 text-rose-400" />
+            <p className="font-semibold">{error}</p>
+          </div>
+        ) : services.length === 0 ? (
+          <div className="text-center py-20 text-slate-400 font-medium bg-[#0e3a4b]/50 border border-slate-700/50 p-8 max-w-lg mx-auto">
+            No services listed at the moment. Please check back soon.
           </div>
         ) : (
           <motion.div 

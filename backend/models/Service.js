@@ -5,7 +5,7 @@ const ServiceSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Please add a title'],
     trim: true,
-    maxlength: [50, 'Title can not be more than 50 characters']
+    maxlength: [120, 'Title cannot be more than 120 characters']
   },
   description: {
     type: String,
@@ -13,23 +13,23 @@ const ServiceSchema = new mongoose.Schema({
   },
   features: {
     type: [String],
-    required: true
+    default: []
   },
   benefits: {
     type: [String],
-    required: true
+    default: []
   },
   icon: {
     type: String,
-    default: 'DefaultIcon'
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
+    default: 'Code'
   },
   order: {
     type: Number,
     default: 0
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
   }
 });
 
