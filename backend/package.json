@@ -14,7 +14,7 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "cloudinary": "^1.41.3",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
@@ -23,8 +23,5 @@
     "mongoose": "^9.7.0",
     "multer": "^2.2.0",
     "multer-storage-cloudinary": "^4.0.0"
-  },
-  "devDependencies": {
-    "mongodb-memory-server": "^11.3.0"
   }
 }
